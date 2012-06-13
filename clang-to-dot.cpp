@@ -428,7 +428,7 @@ std::string ClangToDot::Traverse(clang::Stmt * stmt) {
     return result;
 }
 
-void ClangToDot::Traverse(const clang::Type * type) {
+std::string ClangToDot::Traverse(const clang::Type * type) {
     if (type == NULL)
         return NULL;
 
@@ -694,632 +694,287 @@ bool ClangToDot::VisitTranslationUnitDecl(clang::TranslationUnitDecl * translati
 /* Visit Statements */
 /********************/
 
-bool ClangToDot::VisitStmt(clang::Stmt * stmt) {
-    if (*node == NULL) {
-        std::cerr << "Runtime error: No Sage node associated with the Statement..." << std::endl;
-        return false;
-    }
-
-    // TODO Is there anything else todo?
-
-    if (
-        isSgLocatedNode(*node) != NULL &&
-        (
-            isSgLocatedNode(*node)->get_file_info() == NULL ||
-            !(isSgLocatedNode(*node)->get_file_info()->isCompilerGenerated())
-        )
-    ) {
-        applySourceRange(*node, stmt->getSourceRange());
-    }
+bool ClangToDot::VisitStmt(clang::Stmt * stmt, std::string & name) {
+    // TODO
 
     return true;
 }
 
-bool ClangToDot::VisitBreakStmt(clang::BreakStmt * break_stmt) {
-    *node = SageBuilder::buildBreakStmt();
-    return VisitStmt(break_stmt, node);
+bool ClangToDot::VisitBreakStmt(clang::BreakStmt * break_stmt, std::string & name) {
+    // TODO
+
+    return VisitStmt(break_stmt, name);
 }
 
-bool ClangToDot::VisitCompoundStmt(clang::CompoundStmt * compound_stmt) {
-#if DEBUG_VISIT_STMT
-    std::cerr << "ClangToDot::VisitCompoundStmt" << std::endl;
-#endif
-
+bool ClangToDot::VisitCompoundStmt(clang::CompoundStmt * compound_stmt, std::string & name) {
     bool res = true;
-
-    SgBasicBlock * block = SageBuilder::buildBasicBlock();
-
-    block->set_parent(SageBuilder::topScopeStack());
-
-    SageBuilder::pushScopeStack(block);
 
     clang::CompoundStmt::body_iterator it;
     for (it = compound_stmt->body_begin(); it != compound_stmt->body_end(); it++) {
-        SgNode * tmp_node = Traverse(*it);
-
-#if DEBUG_VISIT_STMT
-        if (tmp_node != NULL)
-          std::cerr << "In VisitCompoundStmt : child is " << tmp_node->class_name() << std::endl;
-        else
-          std::cerr << "In VisitCompoundStmt : child is NULL" << std::endl;
-#endif
-
-        SgClassDeclaration * class_decl = isSgClassDeclaration(tmp_node);
-        if (class_decl != NULL && (class_decl->get_name() == "" || class_decl->get_isUnNamed())) continue;
-        SgEnumDeclaration * enum_decl = isSgEnumDeclaration(tmp_node);
-        if (enum_decl != NULL && (enum_decl->get_name() == "" || enum_decl->get_isUnNamed())) continue;
-#if DEBUG_VISIT_STMT
-        else if (enum_decl != NULL)
-          std::cerr << "enum_decl = " << enum_decl << " >> name: " << enum_decl->get_name() << std::endl;
-#endif
-
-        SgStatement * stmt  = isSgStatement(tmp_node);
-        SgExpression * expr = isSgExpression(tmp_node);
-        if (tmp_node != NULL && stmt == NULL && expr == NULL) {
-            std::cerr << "Runtime error: tmp_node != NULL && stmt == NULL && expr == NULL" << std::endl;
-            res = false;
-        }
-        else if (stmt != NULL) {
-            block->append_statement(stmt);
-        }
-        else if (expr != NULL) {
-            SgExprStatement * expr_stmt = SageBuilder::buildExprStatement(expr);
-            block->append_statement(expr_stmt);
-        }
+        *it;
     }
 
-    SageBuilder::popScopeStack();
-
-    *node = block;
-
-    return VisitStmt(compound_stmt, node) && res;
+    return VisitStmt(compound_stmt, name) && res;
 }
 
-bool ClangToDot::VisitContinueStmt(clang::ContinueStmt * continue_stmt) {
-    *node = SageBuilder::buildContinueStmt();
-    return VisitStmt(continue_stmt, node);
+bool ClangToDot::VisitContinueStmt(clang::ContinueStmt * continue_stmt, std::string & name) {
+    // TODO
+
+    return VisitStmt(continue_stmt, name);
 }
 
-bool ClangToDot::VisitDeclStmt(clang::DeclStmt * decl_stmt) {
+bool ClangToDot::VisitDeclStmt(clang::DeclStmt * decl_stmt, std::string & name) {
     bool res = true;
 
     if (decl_stmt->isSingleDecl()) {
-        *node = Traverse(decl_stmt->getSingleDecl());
+        decl_stmt->getSingleDecl();
     }
     else {
-        std::vector<SgNode *> tmp_decls;
-        SgDeclarationStatement * decl;
         clang::DeclStmt::decl_iterator it;
-
-        SgScopeStatement * scope = SageBuilder::topScopeStack();
-
         for (it = decl_stmt->decl_begin(); it != decl_stmt->decl_end(); it++)
-            tmp_decls.push_back(Traverse(*it));
-        for (unsigned i = 0; i < tmp_decls.size() - 1; i++) {
-            decl = isSgDeclarationStatement(tmp_decls[i]);
-            if (tmp_decls[i] != NULL && decl == NULL) {
-                std::cerr << "Runtime error: tmp_decls[i] != NULL && decl == NULL" << std::endl;
-                res = false;
-                continue;
-            }
-            else {
-              SgClassDeclaration * class_decl = isSgClassDeclaration(decl);
-              if (class_decl != NULL && (class_decl->get_name() == "" || class_decl->get_isUnNamed())) continue;
-              SgEnumDeclaration * enum_decl = isSgEnumDeclaration(decl);
-              if (enum_decl != NULL && (enum_decl->get_name() == "" || enum_decl->get_isUnNamed())) continue;
-            }
-            scope->append_statement(decl);
-            decl->set_parent(scope);
-        }
-        decl = isSgDeclarationStatement(tmp_decls[tmp_decls.size() - 1]);
-        if (tmp_decls[tmp_decls.size() - 1] != NULL && decl == NULL) {
-            std::cerr << "Runtime error: tmp_decls[tmp_decls.size() - 1] != NULL && decl == NULL" << std::endl;
-            res = false;
-        }
-        *node = decl;
+            Traverse(*it);
     }
 
-    return res;
+    return VisitStmt(decl_stmt, name) && res;
 }
 
-bool ClangToDot::VisitDoStmt(clang::DoStmt * do_stmt) {
-    SgNode * tmp_cond = Traverse(do_stmt->getCond());
-    SgExpression * cond = isSgExpression(tmp_cond);
-    ROSE_ASSERT(cond != NULL);
-
-    SgStatement * expr_stmt = SageBuilder::buildExprStatement(cond);
-
-    ROSE_ASSERT(expr_stmt != NULL);
-
-    SgDoWhileStmt * sg_do_stmt = SageBuilder::buildDoWhileStmt_nfi(expr_stmt, NULL);
-
-    sg_do_stmt->set_condition(expr_stmt);
-
-    cond->set_parent(expr_stmt);
-    expr_stmt->set_parent(sg_do_stmt);
-
-    SageBuilder::pushScopeStack(sg_do_stmt);
-
-    SgNode * tmp_body = Traverse(do_stmt->getBody());
-    SgStatement * body = isSgStatement(tmp_body);
-    SgExpression * expr = isSgExpression(tmp_body);
-    if (expr != NULL) {
-        body =  SageBuilder::buildExprStatement(expr);
-        applySourceRange(body, do_stmt->getBody()->getSourceRange());
-    }
-    ROSE_ASSERT(body != NULL);
-
-    body->set_parent(sg_do_stmt);
-
-    SageBuilder::popScopeStack();
-
-    sg_do_stmt->set_body(body);
-
-    *node = sg_do_stmt;
-
-    return VisitStmt(do_stmt, node); 
-}
-
-bool ClangToDot::VisitExpr(clang::Expr * expr) {
-     // TODO Is there anything to be done? (maybe in relation with typing?)
-
-     return VisitStmt(expr, node);
-}
-
-bool ClangToDot::VisitConditionalOperator(clang::ConditionalOperator * conditional_operator) {
+bool ClangToDot::VisitDoStmt(clang::DoStmt * do_stmt, std::string & name) {
     bool res = true;
 
-    SgNode * tmp_cond  = Traverse(conditional_operator->getCond());
-    SgExpression * cond_expr = isSgExpression(tmp_cond);
-    ROSE_ASSERT(cond_expr);
-    SgNode * tmp_true  = Traverse(conditional_operator->getTrueExpr());
-    SgExpression * true_expr = isSgExpression(tmp_true);
-    ROSE_ASSERT(true_expr);
-    SgNode * tmp_false = Traverse(conditional_operator->getFalseExpr());
-    SgExpression * false_expr = isSgExpression(tmp_false);
-    ROSE_ASSERT(false_expr);
+    do_stmt->getCond();
 
-    *node = SageBuilder::buildConditionalExp(cond_expr, true_expr, false_expr);
+    do_stmt->getBody();
 
-    return VisitExpr(conditional_operator, node) && res;
+    return VisitStmt(do_stmt, name) && res;
 }
 
-bool ClangToDot::VisitBinaryOperator(clang::BinaryOperator * binary_operator) {
+bool ClangToDot::VisitExpr(clang::Expr * expr, std::string & name) {
+     bool res = true;
+
+     // TODO
+
+     return VisitStmt(expr, node) && true;
+}
+
+bool ClangToDot::VisitConditionalOperator(clang::ConditionalOperator * conditional_operator, std::string & name) {
     bool res = true;
 
-    SgNode * tmp_lhs = Traverse(binary_operator->getLHS());
-    SgExpression * lhs = isSgExpression(tmp_lhs);
-    if (tmp_lhs != NULL && lhs == NULL) {
-        std::cerr << "Runtime error: tmp_lhs != NULL && lhs == NULL" << std::endl;
-        res = false;
-    }
+    conditional_operator->getCond();
 
-    SgNode * tmp_rhs = Traverse(binary_operator->getRHS());
-    SgExpression * rhs = isSgExpression(tmp_rhs);
-    if (tmp_rhs != NULL && rhs == NULL) {
-        std::cerr << "Runtime error: tmp_rhs != NULL && rhs == NULL" << std::endl;
-        res = false;
-    }
+    conditional_operator->getTrueExpr();
 
-    switch (binary_operator->getOpcode()) {
-        case clang::BO_PtrMemD:   ROSE_ASSERT(!"clang::BO_PtrMemD:");//*node = SageBuilder::build(lhs, rhs); break;
-        case clang::BO_PtrMemI:   ROSE_ASSERT(!"clang::BO_PtrMemI:");//*node = SageBuilder::build(lhs, rhs); break;
-        case clang::BO_Mul:       *node = SageBuilder::buildMultiplyOp(lhs, rhs); break;
-        case clang::BO_Div:       *node = SageBuilder::buildDivideOp(lhs, rhs); break;
-        case clang::BO_Rem:       *node = SageBuilder::buildModOp(lhs, rhs); break;
-        case clang::BO_Add:       *node = SageBuilder::buildAddOp(lhs, rhs); break;
-        case clang::BO_Sub:       *node = SageBuilder::buildSubtractOp(lhs, rhs); break;
-        case clang::BO_Shl:       *node = SageBuilder::buildLshiftOp(lhs, rhs); break;
-        case clang::BO_Shr:       *node = SageBuilder::buildRshiftOp(lhs, rhs); break;
-        case clang::BO_LT:        *node = SageBuilder::buildLessThanOp(lhs, rhs); break;
-        case clang::BO_GT:        *node = SageBuilder::buildGreaterThanOp(lhs, rhs); break;
-        case clang::BO_LE:        *node = SageBuilder::buildLessOrEqualOp(lhs, rhs); break;
-        case clang::BO_GE:        *node = SageBuilder::buildGreaterOrEqualOp(lhs, rhs); break;
-        case clang::BO_EQ:        *node = SageBuilder::buildEqualityOp(lhs, rhs); break;
-        case clang::BO_NE:        *node = SageBuilder::buildNotEqualOp(lhs, rhs); break;
-        case clang::BO_And:       *node = SageBuilder::buildBitAndOp(lhs, rhs); break;
-        case clang::BO_Xor:       *node = SageBuilder::buildBitXorOp(lhs, rhs); break;
-        case clang::BO_Or:        *node = SageBuilder::buildBitOrOp(lhs, rhs); break;
-        case clang::BO_LAnd:      *node = SageBuilder::buildAndOp(lhs, rhs); break;
-        case clang::BO_LOr:       *node = SageBuilder::buildOrOp(lhs, rhs); break;
-        case clang::BO_Assign:    *node = SageBuilder::buildAssignOp(lhs, rhs); break;
-        case clang::BO_MulAssign: *node = SageBuilder::buildMultAssignOp(lhs, rhs); break;
-        case clang::BO_DivAssign: *node = SageBuilder::buildDivAssignOp(lhs, rhs); break;
-        case clang::BO_RemAssign: *node = SageBuilder::buildModAssignOp(lhs, rhs); break;
-        case clang::BO_AddAssign: *node = SageBuilder::buildPlusAssignOp(lhs, rhs); break;
-        case clang::BO_SubAssign: *node = SageBuilder::buildMinusAssignOp(lhs, rhs); break;
-        case clang::BO_ShlAssign: *node = SageBuilder::buildLshiftAssignOp(lhs, rhs); break;
-        case clang::BO_ShrAssign: *node = SageBuilder::buildRshiftAssignOp(lhs, rhs); break;
-        case clang::BO_AndAssign: *node = SageBuilder::buildAndAssignOp(lhs, rhs); break;
-        case clang::BO_XorAssign: *node = SageBuilder::buildXorAssignOp(lhs, rhs); break;
-        case clang::BO_OrAssign:  *node = SageBuilder::buildIorAssignOp(lhs, rhs); break;
-        case clang::BO_Comma:     *node = SageBuilder::buildCommaOpExp(lhs, rhs); break;
-        default:
-            std::cerr << "Unknown opcode for binary operator: " << binary_operator->getOpcodeStr() << std::endl;
-            res = false;
-    }
+    conditional_operator->getFalseExpr();
+
+    return VisitExpr(conditional_operator, name) && res;
+}
+
+bool ClangToDot::VisitBinaryOperator(clang::BinaryOperator * binary_operator, std::string & name) {
+    bool res = true;
+
+    binary_operator->getLHS();
+
+    binary_operator->getRHS();
+
+    binary_operator->getOpcodeStr()
 
     return VisitExpr(binary_operator, node) && res;
 }
 
-bool ClangToDot::VisitArraySubscriptExpr(clang::ArraySubscriptExpr * array_subscript_expr) {
+bool ClangToDot::VisitArraySubscriptExpr(clang::ArraySubscriptExpr * array_subscript_expr, std::string & name) {
     bool res = true;
 
-    SgNode * tmp_base = Traverse(array_subscript_expr->getBase());
-    SgExpression * base = isSgExpression(tmp_base);
-    if (tmp_base != NULL && base == NULL) {
-        std::cerr << "Runtime error: tmp_base != NULL && base == NULL" << std::endl;
-        res = false;
-    }
+    array_subscript_expr->getBase();
 
-    SgNode * tmp_idx = Traverse(array_subscript_expr->getIdx());
-    SgExpression * idx = isSgExpression(tmp_idx);
-    if (tmp_idx != NULL && idx == NULL) {
-        std::cerr << "Runtime error: tmp_idx != NULL && idx == NULL" << std::endl;
-        res = false;
-    }
+    array_subscript_expr->getIdx();
 
-    *node = SageBuilder::buildPntrArrRefExp(base, idx);
-
-    return VisitExpr(array_subscript_expr, node) && res;
+    return VisitExpr(array_subscript_expr, name) && res;
 }
 
-bool ClangToDot::VisitCallExpr(clang::CallExpr * call_expr) {
+bool ClangToDot::VisitCallExpr(clang::CallExpr * call_expr, std::string & name) {
     bool res = true;
 
-    SgNode * tmp_expr = Traverse(call_expr->getCallee());
-    SgExpression * expr = isSgExpression(tmp_expr);
-    if (tmp_expr != NULL && expr == NULL) {
-        std::cerr << "Runtime error: tmp_expr != NULL && expr == NULLL" << std::endl;
-        res = false;
-    }
-
-    SgExprListExp * param_list = SageBuilder::buildExprListExp_nfi();
-        applySourceRange(param_list, call_expr->getSourceRange());
+    call_expr->getCallee();
 
     clang::CallExpr::arg_iterator it;
     for (it = call_expr->arg_begin(); it != call_expr->arg_end(); ++it) {
-        SgNode * tmp_expr = Traverse(*it);
-        SgExpression * expr = isSgExpression(tmp_expr);
-        if (tmp_expr != NULL && expr == NULL) {
-            std::cerr << "Runtime error: tmp_expr != NULL && expr == NULL" << std::endl;
-            res = false;
-            continue;
-        }
-        param_list->append_expression(expr);
+        *it;
     }
 
-    *node = SageBuilder::buildFunctionCallExp_nfi(expr, param_list);
-
-    return VisitExpr(call_expr, node) && res;
+    return VisitExpr(call_expr, name) && res;
 }
 
-bool ClangToDot::VisitCStyleCastExpr(clang::CStyleCastExpr * c_style_cast) {
+bool ClangToDot::VisitCastExpr(clang::CastExpr * cast, std::string & name) {
     bool res = true;
 
-    SgNode * tmp_expr = Traverse(c_style_cast->getSubExpr());
-    SgExpression * expr = isSgExpression(tmp_expr);
+    // TODO check 'name' is set
 
-    ROSE_ASSERT(expr);
+    cast->getSubExpr();
 
-    SgType * type = buildTypeFromQualifiedType(c_style_cast->getTypeAsWritten());
-
-    *node = SageBuilder::buildCastExp(expr, type, SgCastExp::e_C_style_cast);
-
-    return VisitExpr(c_style_cast, node) && res;
+    return VisitExpr(cast, name) && res;
 }
 
-bool ClangToDot::VisitImplicitCastExpr(clang::ImplicitCastExpr * implicit_cast_expr) {
-    SgNode * tmp_expr = Traverse(implicit_cast_expr->getSubExpr());
-    SgExpression * expr = isSgExpression(tmp_expr);
-    
-    ROSE_ASSERT(expr != NULL);
-/*
-    FIXME why not? I dont remember why i commented it... :)
-
-    SgType * type = buildTypeFromQualifiedType(implicit_cast_expr->getType());
-    SgCastExp * res = SageBuilder::buildCastExp(expr, type);
-    setCompilerGeneratedFileInfo(res);
-
-    *node = res;
-*/
-
-    *node = expr;
-
-    return VisitExpr(implicit_cast_expr, node);
-}
-
-bool ClangToDot::VisitCharacterLiteral(clang::CharacterLiteral * character_literal) {
-    *node = SageBuilder::buildCharVal(character_literal->getValue());
-
-    return VisitExpr(character_literal, node);
-}
-
-bool ClangToDot::VisitCompoundLiteralExpr(clang::CompoundLiteralExpr * compound_literal) {
-    SgNode * tmp_node = Traverse(compound_literal->getInitializer());
-    SgExprListExp * expr = isSgExprListExp(tmp_node);
-
-    ROSE_ASSERT(expr != NULL);
-
-    SgType * type = buildTypeFromQualifiedType(compound_literal->getType());
-
-    ROSE_ASSERT(type != NULL);
-
-    *node = SageBuilder::buildCompoundInitializer_nfi(expr, type);
-
-    return VisitExpr(compound_literal, node);
-}
-
-bool ClangToDot::VisitDeclRefExpr(clang::DeclRefExpr * decl_ref_expr) {
+bool ClangToDot::VisitExplicitCastExpr(clang::ExplicitCastExpr * explicit_cast_expr, std::string & res) {
     bool res = true;
 
-    //SgNode * tmp_node = Traverse(decl_ref_expr->getDecl());
-    // DONE: Do not use Traverse(...) as the declaration can not be complete (recursive functions)
-    //       Instead use SymbolTable from ROSE as the symbol should be ready (cannot have a reference before the declaration)
-    // FIXME: This fix will not work for C++ (methods/fields can be use before they are declared...)
-    // FIXME: I feel like it could work now, we will see ....
+    // TODO check 'name' is set
 
-    SgSymbol * sym = GetSymbolFromSymbolTable(decl_ref_expr->getDecl());
+    explicit_cast_expr->getTypeAsWritten();
 
-    if (sym == NULL) {
-        SgNode * tmp_decl = Traverse(decl_ref_expr->getDecl());
-
-        if (tmp_decl != NULL) {
-            sym = GetSymbolFromSymbolTable(decl_ref_expr->getDecl());
-        }
-        // FIXME hack Traverse have added the symbol but we cannot find it (probably: problem with type and function lookup)
-        if (sym == NULL && isSgFunctionDeclaration(tmp_decl) != NULL) {
-            sym = new SgFunctionSymbol(isSgFunctionDeclaration(tmp_decl));
-            sym->set_parent(tmp_decl);
-        }
-        
-    }
-
-    if (sym != NULL) { // Not else if it was NULL we have try to traverse it....
-        SgVariableSymbol  * var_sym  = isSgVariableSymbol(sym);
-        SgFunctionSymbol  * func_sym = isSgFunctionSymbol(sym);
-        SgEnumFieldSymbol * enum_sym = isSgEnumFieldSymbol(sym);
-
-        if (var_sym != NULL) {
-            *node = SageBuilder::buildVarRefExp(var_sym);
-        }
-        else if (func_sym != NULL) {
-            *node = SageBuilder::buildFunctionRefExp(func_sym);
-        }
-        else if (enum_sym != NULL) {
-            SgEnumDeclaration * enum_decl = isSgEnumDeclaration(enum_sym->get_declaration()->get_parent());
-            ROSE_ASSERT(enum_decl != NULL);
-            SgName name = enum_sym->get_name();
-            *node = SageBuilder::buildEnumVal_nfi(0, enum_decl, name);
-        }
-        else if (sym != NULL) {
-            std::cerr << "Runtime error: Unknown type of symbol for a declaration reference." << std::endl;
-            std::cerr << "    sym->class_name() = " << sym->class_name()  << std::endl;
-            ROSE_ASSERT(false);
-        }
-    }
-    else {
-         std::cerr << "Runtime error: Cannot find the symbol for a declaration reference (even after trying to buil th declaration)" << std::endl;
-         ROSE_ASSERT(false);
-    }
-
-    return VisitExpr(decl_ref_expr, node) && res;
+    return VisitCastExpr(explicit_cast_expr,name) && res;
 }
 
-bool ClangToDot::VisitDesignatedInitExpr(clang::DesignatedInitExpr * designated_init_expr) {
-    SgInitializer * init = NULL;    
-    {
-        SgNode * tmp_expr = Traverse(designated_init_expr->getInit());
-        SgExpression * expr = isSgExpression(tmp_expr);
-        ROSE_ASSERT(expr != NULL);
-        SgExprListExp * expr_list_exp = isSgExprListExp(expr);
-        if (expr_list_exp != NULL) {
-            // FIXME get the type right...
-            init = SageBuilder::buildAggregateInitializer_nfi(expr_list_exp, NULL);
-        }
-        else {
-            init = SageBuilder::buildAssignInitializer_nfi(expr, expr->get_type());
-        }
-        ROSE_ASSERT(init != NULL);
-        applySourceRange(init, designated_init_expr->getInit()->getSourceRange());
-    }
+bool ClangToDot::VisitCStyleCastExpr(clang::CStyleCastExpr * c_style_cast, std::string & name) {
+    bool res = true;
 
-    SgExprListExp * expr_list_exp = SageBuilder::buildExprListExp_nfi();
+    // TODO
+
+    return VisitCastExpr(c_style_cast, name) && res;
+}
+
+bool ClangToDot::VisitImplicitCastExpr(clang::ImplicitCastExpr * implicit_cast_expr, std::string & name) {
+    bool res = true;
+
+    // TODO
+
+    return VisitCastExpr(implicit_cast_expr, name) && res;
+}
+
+bool ClangToDot::VisitCharacterLiteral(clang::CharacterLiteral * character_literal, std::string & name) {
+    bool res = true;
+
+    character_literal->getValue();
+
+    return VisitExpr(character_literal, name) && res;
+}
+
+bool ClangToDot::VisitCompoundLiteralExpr(clang::CompoundLiteralExpr * compound_literal, std::string & name) {
+    bool res = true;
+
+    compound_literal->getInitializer();
+
+    compound_literal->getType();
+
+    return VisitExpr(compound_literal, node) && res;
+}
+
+bool ClangToDot::VisitDeclRefExpr(clang::DeclRefExpr * decl_ref_expr, std::string & name) {
+    bool res = true;
+
+    decl_ref_expr->getDecl();
+
+    return VisitExpr(decl_ref_expr, name) && res;
+}
+
+bool ClangToDot::VisitDesignatedInitExpr(clang::DesignatedInitExpr * designated_init_expr, std::string & name) {
+    bool res = true;
+
+    designated_init_expr->getInit();
+
     clang::DesignatedInitExpr::designators_iterator it;
     for (it = designated_init_expr->designators_begin(); it != designated_init_expr->designators_end(); it++) {
-        SgExpression * expr = NULL;
         if (it->isFieldDesignator()) {
-            SgSymbol * symbol = GetSymbolFromSymbolTable(it->getField());
-            SgVariableSymbol * var_sym = isSgVariableSymbol(symbol);
-            ROSE_ASSERT(var_sym != NULL);
-            expr = SageBuilder::buildVarRefExp_nfi(var_sym);
-            applySourceRange(expr, it->getSourceRange());
+            it->getField();
         }
         else if (it->isArrayDesignator()) {
-            SgNode * tmp_expr = Traverse(designated_init_expr->getArrayIndex(*it));
-            expr = isSgExpression(tmp_expr);
-            ROSE_ASSERT(expr != NULL);
+            designated_init_expr->getArrayIndex(*it);
         }
         else if (it->isArrayRangeDesignator()) {
-            ROSE_ASSERT(!"I don't believe range designator initializer are supported by ROSE...");    
+            // TODO
         }
-        else ROSE_ASSERT(false);
-
-        ROSE_ASSERT(expr != NULL);
-
-        expr->set_parent(expr_list_exp);
-        expr_list_exp->append_expression(expr);
+        else assert(false);
     }
 
-    applySourceRange(expr_list_exp, designated_init_expr->getDesignatorsSourceRange());
-
-    SgDesignatedInitializer * design_init = new SgDesignatedInitializer(expr_list_exp, init);
-    expr_list_exp->set_parent(design_init);
-    init->set_parent(design_init);
-
-    *node = design_init;
-
-    return VisitExpr(designated_init_expr, node);
+    return VisitExpr(designated_init_expr, name) && res;
 }
 
-bool ClangToDot::VisitExtVectorElementExpr(clang::ExtVectorElementExpr * ext_vector_element_expr) {
-    SgNode * tmp_base = Traverse(ext_vector_element_expr->getBase());
-    SgExpression * base = isSgExpression(tmp_base);
+bool ClangToDot::VisitExtVectorElementExpr(clang::ExtVectorElementExpr * ext_vector_element_expr, std::string & name) {
+    bool res = true;
 
-    ROSE_ASSERT(base != NULL);
+    ext_vector_element_expr->getBase();
 
-    SgType * type = buildTypeFromQualifiedType(ext_vector_element_expr->getType());
+    ext_vector_element_expr->getType();
 
     clang::IdentifierInfo & ident_info = ext_vector_element_expr->getAccessor();
     std::string ident = ident_info.getName().str();
 
-    SgScopeStatement * scope = SageBuilder::ScopeStack.front();
-    SgGlobal * global = isSgGlobal(scope);
-    ROSE_ASSERT(global != NULL);
+    if (ext_vector_element_expr->isArrow()) {
+        // TODO
+    }
+    else {
+        // TODO
+    }
 
-  // Build Manually a SgVarRefExp to have the same Accessor (text version) TODO ExtVectorAccessor and ExtVectorType
-    SgInitializedName * init_name = SageBuilder::buildInitializedName(ident, SageBuilder::buildVoidType(), NULL);
-    setCompilerGeneratedFileInfo(init_name);
-    init_name->set_scope(global);
-    SgVariableSymbol * var_symbol = new SgVariableSymbol(init_name);
-    SgVarRefExp * pseudo_field = new SgVarRefExp(var_symbol);
-    setCompilerGeneratedFileInfo(pseudo_field, true);
-    init_name->set_parent(pseudo_field);
-
-    SgExpression * res = NULL;
-    if (ext_vector_element_expr->isArrow())
-        res = SageBuilder::buildArrowExp(base, pseudo_field);
-    else
-        res = SageBuilder::buildDotExp(base, pseudo_field);
-
-    ROSE_ASSERT(res != NULL);
-
-    *node = res;
-
-   return VisitExpr(ext_vector_element_expr, node);
+   return VisitExpr(ext_vector_element_expr, node) && res;
 }
 
-bool ClangToDot::VisitFloatingLiteral(clang::FloatingLiteral * floating_literal) {
+bool ClangToDot::VisitFloatingLiteral(clang::FloatingLiteral * floating_literal, std::string & name) {
+    bool res = true;
+
+    // FIXME
+
     unsigned int precision =  llvm::APFloat::semanticsPrecision(floating_literal->getValue().getSemantics());
     if (precision == 24)
-        *node = SageBuilder::buildFloatVal(floating_literal->getValue().convertToFloat());
+        floating_literal->getValue().convertToFloat();
     else if (precision == 53)
-        *node = SageBuilder::buildDoubleVal(floating_literal->getValue().convertToDouble());
+        floating_literal->getValue().convertToDouble();
     else
-        ROSE_ASSERT(!"In VisitFloatingLiteral: Unsupported float size");
+        assert(!"In VisitFloatingLiteral: Unsupported float size");
 
-    return VisitExpr(floating_literal, node);
+    return VisitExpr(floating_literal, name) && res;
 }
 
-bool ClangToDot::VisitImaginaryLiteral(clang::ImaginaryLiteral * imaginary_literal) {
-    SgNode * tmp_imag_val = Traverse(imaginary_literal->getSubExpr());
-    SgValueExp * imag_val = isSgValueExp(tmp_imag_val);
-    ROSE_ASSERT(imag_val != NULL);
+bool ClangToDot::VisitImaginaryLiteral(clang::ImaginaryLiteral * imaginary_literal, std::string & name) {
+    bool res = true;
 
-    SgComplexVal * comp_val = new SgComplexVal(NULL, imag_val, imag_val->get_type(), "");
+    imaginary_literal->getSubExpr();
 
-    *node = comp_val;
-
-    return VisitExpr(imaginary_literal, node);
+    return VisitExpr(imaginary_literal, node) && res;
 }
 
-bool ClangToDot::VisitInitListExpr(clang::InitListExpr * init_list_expr) {
-    // We use the syntactic version of the initializer if it exists
-    if (init_list_expr->getSyntacticForm() != NULL) return VisitInitListExpr(init_list_expr->getSyntacticForm(), node);
+bool ClangToDot::VisitInitListExpr(clang::InitListExpr * init_list_expr, std::string & name) {
+    bool res = true;
 
-    SgExprListExp * expr_list_expr = SageBuilder::buildExprListExp_nfi();
+    init_list_expr->getSyntacticForm();
 
     clang::InitListExpr::iterator it;
     for (it = init_list_expr->begin(); it != init_list_expr->end(); it++) {
-        SgNode * tmp_expr = Traverse(*it);
-        SgExpression * expr = isSgExpression(tmp_expr);
-        ROSE_ASSERT(expr != NULL);
-        expr_list_expr->append_expression(expr);
+        *it;
     }
 
-    *node = expr_list_expr;
-
-    return VisitExpr(init_list_expr, node);
+    return VisitExpr(init_list_expr, name) && res;
 }
 
-bool ClangToDot::VisitIntegerLiteral(clang::IntegerLiteral * integer_literal) {
-    *node = SageBuilder::buildIntVal(integer_literal->getValue().getSExtValue());
-
-    return VisitExpr(integer_literal, node);
-}
-
-bool ClangToDot::VisitMemberExpr(clang::MemberExpr * member_expr) {
+bool ClangToDot::VisitIntegerLiteral(clang::IntegerLiteral * integer_literal, std::string & name) {
     bool res = true;
 
-    SgNode * tmp_base = Traverse(member_expr->getBase());
-    SgExpression * base = isSgExpression(tmp_base);
-    ROSE_ASSERT(base != NULL);
+    integer_literal->getValue();
 
-    SgSymbol * sym = GetSymbolFromSymbolTable(member_expr->getMemberDecl());
-
-    SgVariableSymbol * var_sym  = isSgVariableSymbol(sym);
-    SgMemberFunctionSymbol * func_sym = isSgMemberFunctionSymbol(sym);
-
-    SgExpression * sg_member_expr = NULL;
-
-    bool successful_cast = var_sym || func_sym;
-    if (sym != NULL && !successful_cast) {
-        std::cerr << "Runtime error: Unknown type of symbol for a member reference." << std::endl;
-        std::cerr << "    sym->class_name() = " << sym->class_name()  << std::endl;
-        res = false;
-    }
-    else if (var_sym != NULL) {
-        sg_member_expr = SageBuilder::buildVarRefExp(var_sym);
-    }
-    else if (func_sym != NULL) { // C++
-        sg_member_expr = SageBuilder::buildMemberFunctionRefExp_nfi(func_sym, false, false); // FIXME 2nd and 3rd params ?
-    }
-
-    ROSE_ASSERT(sg_member_expr != NULL);
-
-    // TODO (C++) member_expr->getQualifier() : for 'a->Base::foo'
-
-    if (member_expr->isArrow())
-        *node = SageBuilder::buildArrowExp(base, sg_member_expr);
-    else
-        *node = SageBuilder::buildDotExp(base, sg_member_expr);
-
-    return VisitExpr(member_expr, node) && res;
+    return VisitExpr(integer_literal, name) && res;
 }
 
-bool ClangToDot::VisitParenExpr(clang::ParenExpr * paren_expr) {
+bool ClangToDot::VisitMemberExpr(clang::MemberExpr * member_expr, std::string & name) {
     bool res = true;
 
-    SgNode * tmp_subexpr = Traverse(paren_expr->getSubExpr());
-    SgExpression * subexpr = isSgExpression(tmp_subexpr);
-    if (tmp_subexpr != NULL && subexpr == NULL) {
-        std::cerr << "Runtime error: tmp_subexpr != NULL && subexpr == NULL" << std::endl;
-        res = false;
-    }
+    member_expr->getBase();
 
-    // bypass ParenExpr, their is nothing equivalent in SageIII
-    *node = subexpr;
+    member_expr->getMemberDecl();
 
-    return VisitExpr(paren_expr, node) && res;
+    if (member_expr->isArrow()) {}
+    else {}
+
+    return VisitExpr(member_expr, name) && res;
 }
 
-bool ClangToDot::VisitPredefinedExpr(clang::PredefinedExpr * predefined_expr) {
-    // FIXME It's get tricky here: PredefinedExpr represent compiler generateed variables
-    //    I choose to attach those variables on demand in the function definition scope 
+bool ClangToDot::VisitParenExpr(clang::ParenExpr * paren_exp, std::string & name) {
+    bool res = true;
 
-  // Traverse the scope's stack to find the last function definition:
+    paren_expr->getSubExpr();
 
-    SgFunctionDefinition * func_def = NULL;
-    std::list<SgScopeStatement *>::reverse_iterator it = SageBuilder::ScopeStack.rbegin();
-    while (it != SageBuilder::ScopeStack.rend() && func_def == NULL) {
-        func_def = isSgFunctionDefinition(*it);
-        it++;
-    }
-    ROSE_ASSERT(func_def != NULL);
+    return VisitExpr(paren_expr, name) && res;
+}
 
-  // Determine the name of the variable
-
-    SgName name;
+bool ClangToDot::VisitPredefinedExpr(clang::PredefinedExpr * predefined_expr, std::string & name) {
+    bool res = true;
 
     switch (predefined_expr->getIdentType()) {
         case clang::PredefinedExpr::Func:
@@ -1332,56 +987,19 @@ bool ClangToDot::VisitPredefinedExpr(clang::PredefinedExpr * predefined_expr) {
             name = "__PRETTY_FUNCTION__";
             break;
         case clang::PredefinedExpr::PrettyFunctionNoVirtual:
-            ROSE_ASSERT(false);
+            // TODO
             break;
     }
 
-  // Retrieve the associate symbol if it exists
-
-    SgVariableSymbol * symbol = func_def->lookup_variable_symbol(name);
-
-  // Else, build a compiler generated initialized name for this variable in the function defintion scope.
-
-    if (symbol == NULL) {
-        SgInitializedName * init_name = SageBuilder::buildInitializedName_nfi(name, SageBuilder::buildPointerType(SageBuilder::buildCharType()), NULL);
-
-        init_name->set_parent(func_def);
-        init_name->set_scope(func_def);
-
-        Sg_File_Info * start_fi = Sg_File_Info::generateDefaultFileInfoForCompilerGeneratedNode();
-        start_fi->setCompilerGenerated();
-        init_name->set_startOfConstruct(start_fi);
-
-        Sg_File_Info * end_fi   = Sg_File_Info::generateDefaultFileInfoForCompilerGeneratedNode();
-        end_fi->setCompilerGenerated();
-        init_name->set_endOfConstruct(end_fi);
-
-        symbol = new SgVariableSymbol(init_name);
-
-        func_def->insert_symbol(name, symbol);
-    }
-    ROSE_ASSERT(symbol != NULL);
-
-  // Finally build the variable reference
-
-    *node = SageBuilder::buildVarRefExp_nfi(symbol);
-
-    return true;
+    return VisitExpr(predefined_expr,  name) && res;
 }
 
-bool ClangToDot::VisitStmtExpr(clang::StmtExpr * stmt_expr) {
+bool ClangToDot::VisitStmtExpr(clang::StmtExpr * stmt_expr, std::string & name) {
     bool res = true;
 
-    SgNode * tmp_substmt = Traverse(stmt_expr->getSubStmt());
-    SgStatement * substmt = isSgStatement(tmp_substmt);
-    if (tmp_substmt != NULL && substmt == NULL) {
-        std::cerr << "Runtime error: tmp_substmt != NULL && substmt == NULL" << std::endl;
-        res = false;
-    }
+    stmt_expr->getSubStmt();
 
-    *node = new SgStatementExpression(substmt);
-
-    return VisitExpr(stmt_expr, node) && res;
+    return VisitExpr(stmt_expr, name) && res;
 }
 
 bool ClangToDot::VisitStringLiteral(clang::StringLiteral * string_literal) {
