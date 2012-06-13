@@ -529,13 +529,11 @@ bool ClangToDot::VisitUnaryOperator(clang::UnaryOperator * unary_operator, std::
 }
 
 bool ClangToDot::VisitVAArgExpr(clang::VAArgExpr * va_arg_expr) {
-    SgNode * tmp_expr = Traverse(va_arg_expr->getSubExpr());
-    SgExpression * expr = isSgExpression(tmp_expr);
-    ROSE_ASSERT(expr != NULL);
+    bool res = true;
 
-    *node = SageBuilder::buildVarArgOp_nfi(expr, expr->get_type());
+    va_arg_expr->getSubExpr();
 
-    return VisitExpr(va_arg_expr, node);
+    return VisitExpr(va_arg_expr, name) && res;
 }
 
 bool ClangToDot::VisitForStmt(clang::ForStmt * for_stmt) {
