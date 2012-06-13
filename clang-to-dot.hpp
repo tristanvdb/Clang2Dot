@@ -63,6 +63,14 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/raw_os_ostream.h"
 
+void clang2dot(
+    std::vector<std::string> inc_dirs_list,
+    std::vector<std::string> define_list,
+    std::vector<std::string> inc_list,
+    std::string input_file,
+    std::ostream & out
+);
+
 class ClangToDot : public clang::ASTConsumer {
     public:
         enum Language {
@@ -74,6 +82,13 @@ class ClangToDot : public clang::ASTConsumer {
             unknown
         };
 
+        struct NodeDescriptor {
+            NodeDescriptor();
+
+            std::vector<std::pair<std::string, std::string> > successors;
+            std::vector<std::pair<std::string, std::string> > attributes;
+        };
+
     protected:
         clang::CompilerInstance  * p_compiler_instance;
 
@@ -81,7 +96,11 @@ class ClangToDot : public clang::ASTConsumer {
         std::map<clang::Stmt *, std::string> p_stmt_translation_map;
         std::map<const clang::Type *, std::string> p_type_translation_map;
 
+        std::map<std::string, NodeDescriptor> p_node_desc;
+
         Language language;
+
+        NodeDescriptor & getDescriptor(std::string);
 
     public:
         ClangToDot(clang::CompilerInstance * compiler_instance, Language language_);
@@ -182,8 +201,8 @@ class ClangToDot : public clang::ASTConsumer {
     //              virtual bool VisitCUDAKernelCallExpr(clang::CUDAKernelCallExpr * cuda_kernel_call_expr, std::string & res);
     //              virtual bool VisitCXXMemberCallExpr(clang::CXXMemberCallExpr * cxx_member_call_expr, std::string & res);
     //              virtual bool VisitCXXOperatorCallExpr(clang::CXXOperatorCallExpr * cxx_operator_call_expr, std::string & res);
-    //          virtual bool VisitCastExpr(clang::CastExpr * cast_expr, std::string & res);
-    //              virtual bool VisitExplicitCastExpr(clang::ExplicitCastExpr * explicit_cast_expr, std::string & res);
+                virtual bool VisitCastExpr(clang::CastExpr * cast_expr, std::string & res);
+                    virtual bool VisitExplicitCastExpr(clang::ExplicitCastExpr * explicit_cast_expr, std::string & res);
                         virtual bool VisitCStyleCastExpr(clang::CStyleCastExpr * c_style_cast, std::string & res);
     //                  virtual bool VisitCXXFunctionalCastExpr(clang::CXXFunctionalCastExpr * cxx_functional_cast_expr, std::string & res);
     //                  virtual bool VisitCXXNamedCastExpr(clang::CXXNamedCastExpr * cxx_named_cast_expr, std::string & res);
