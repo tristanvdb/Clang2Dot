@@ -1,11 +1,11 @@
 
-CXXFLAGS=`llvm-config --cppflags`
+CXXFLAGS=-g `llvm-config --cppflags`
 LDFLAGS=`llvm-config --ldflags` -lclangFrontendTool -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangIndex -lclangFrontend -lclangCodeGen  -lclangARCMigrate -lclangRewrite -lclangSerialization -lclangDriver -lclangParse -lclangSema -lclangAnalysis -lclangAST -lclangLex -lclangBasic  `llvm-config --libs engine ipo bitwriter linker asmparser instrumentation`
 
 all: clang2dot
 
 clang2dot: main.o clang-to-dot.o declarations.o statements.o types.o
-	g++ $(LDFLAGS) clang-to-dot.o -o clang2dot
+	g++ main.o clang-to-dot.o declarations.o statements.o types.o $(LDFLAGS) -o clang2dot
 
 main.o: main.cpp clang-to-dot.hpp
 	g++ $(CXXFLAGS) -c main.cpp -o main.o

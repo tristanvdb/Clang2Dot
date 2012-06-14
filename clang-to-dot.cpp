@@ -1,6 +1,8 @@
 
 #include "clang-to-dot.hpp"
 
+#include <iostream>
+
 void clang2dot(
     std::vector<std::string> inc_dirs_list,
     std::vector<std::string> define_list,
@@ -130,7 +132,7 @@ void clang2dot(
 
   // 4 - Generate Graphviz
   
-    // TODO
+    translator.toDot(out);
 }
 
 
@@ -139,15 +141,44 @@ void clang2dot(
 
 ClangToDot::ClangToDot(clang::CompilerInstance * compiler_instance, Language language_) :
     clang::ASTConsumer(),
+    p_compiler_instance(compiler_instance),
+    p_decl_translation_map(),
+    p_stmt_translation_map(),
+    p_type_translation_map(),
+    p_node_desc(),
     language(language_)
 {}
 
 ClangToDot::~ClangToDot() {}
 
-/* (protected) Helper methods */
+/* Printer method: output GraphViz format */
+
+void ClangToDot::toDot(std::ostream & out) const {
+    out << "digraph {" << std::endl;
+
+    std::map<std::string, NodeDescriptor>::const_iterator it_node;
+    for (it_node = p_node_desc.begin(); it_node != p_node_desc.end(); it_node++)
+        it_node->second.toDot(out);
+
+    out << "}" << std::endl;
+}
 
 /* Overload of ASTConsumer::HandleTranslationUnit, it is the "entry point" */
 
 void ClangToDot::HandleTranslationUnit(clang::ASTContext & ast_context) {
     Traverse(ast_context.getTranslationUnitDecl());
 }
+
+/* ClangToDot::NodeDescriptor */
+
+ClangToDot::NodeDescriptor::NodeDescriptor(std::string ident_) :
+    ident(ident_),
+    kind_hierarchy(),
+    successors(),
+    attributes()
+{}
+
+void ClangToDot::NodeDescriptor::toDot(std::ostream & out) const {
+    // TODO
+}
+

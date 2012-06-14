@@ -11,51 +11,48 @@ std::string ClangToDot::Traverse(clang::Decl * decl) {
     if (decl == NULL)
         return NULL;
 
+    // Look for previous translation
     std::map<clang::Decl *, std::string>::iterator it = p_decl_translation_map.find(decl);
-    if (it != p_decl_translation_map.end()) {
-#if DEBUG_TRAVERSE_DECL
-        std::cerr << "Traverse Decl : " << decl << " ";
-        if (clang::NamedDecl::classof(decl)) {
-            std::cerr << ": " << ((clang::NamedDecl *)decl)->getNameAsString() << ") ";
-        }
-        std::cerr << " already visited : node = " << it->second << std::endl;
-#endif
+    if (it != p_decl_translation_map.end())
         return it->second;
-    }
 
-    std::string result;
+    // If first time, create a new entry
+    std::string node_ident = "";
+    p_decl_translation_map.insert(std::pair<clang::Decl *, std::string>(decl, node_ident));
+    NodeDescriptor & node_desc = p_node_desc.insert(std::pair<std::string, NodeDescriptor>(node_ident, NodeDescriptor(node_ident))).first->second;
+
     bool ret_status = false;
 
     switch (decl->getKind()) {
         case clang::Decl::TranslationUnit:
-            ret_status = VisitTranslationUnitDecl((clang::TranslationUnitDecl *)decl, result);
+            ret_status = VisitTranslationUnitDecl((clang::TranslationUnitDecl *)decl, node_desc);
             break;
         case clang::Decl::Typedef:
-            ret_status = VisitTypedefDecl((clang::TypedefDecl *)decl, result);
+            ret_status = VisitTypedefDecl((clang::TypedefDecl *)decl, node_desc);
             break;
         case clang::Decl::Var:
-            ret_status = VisitVarDecl((clang::VarDecl *)decl, result);
+            ret_status = VisitVarDecl((clang::VarDecl *)decl, node_desc);
             break;
         case clang::Decl::Function:
-            ret_status = VisitFunctionDecl((clang::FunctionDecl *)decl, result);
+            ret_status = VisitFunctionDecl((clang::FunctionDecl *)decl, node_desc);
             break;
         case clang::Decl::ParmVar:
-            ret_status = VisitParmVarDecl((clang::ParmVarDecl *)decl, result);
+            ret_status = VisitParmVarDecl((clang::ParmVarDecl *)decl, node_desc);
             break;
         case clang::Decl::CXXRecord:
-          ret_status = VisitCXXRecordDecl((clang::CXXRecordDecl *)decl, result);
+          ret_status = VisitCXXRecordDecl((clang::CXXRecordDecl *)decl, node_desc);
           break;
         case clang::Decl::Record:
-            ret_status = VisitRecordDecl((clang::RecordDecl *)decl, result);
+            ret_status = VisitRecordDecl((clang::RecordDecl *)decl, node_desc);
             break;
         case clang::Decl::Field:
-            ret_status = VisitFieldDecl((clang::FieldDecl *)decl, result);
+            ret_status = VisitFieldDecl((clang::FieldDecl *)decl, node_desc);
             break;
         case clang::Decl::Enum:
-            ret_status = VisitEnumDecl((clang::EnumDecl *)decl, result);
+            ret_status = VisitEnumDecl((clang::EnumDecl *)decl, node_desc);
             break;
         case clang::Decl::EnumConstant:
-            ret_status = VisitEnumConstantDecl((clang::EnumConstantDecl *)decl, result);
+            ret_status = VisitEnumConstantDecl((clang::EnumConstantDecl *)decl, node_desc);
             break;
         // TODO cases
         default:
@@ -64,32 +61,21 @@ std::string ClangToDot::Traverse(clang::Decl * decl) {
     }
 
     assert(ret_status != false);
-    assert(result != "");
 
-    p_decl_translation_map.insert(std::pair<clang::Decl *, std::string>(decl, result));
-
-#if DEBUG_TRAVERSE_DECL
-    std::cerr << "Traverse(clang::Decl : " << decl << " ";
-    if (clang::NamedDecl::classof(decl)) {
-        std::cerr << ": " << ((clang::NamedDecl *)decl)->getNameAsString() << ") ";
-    }
-    std::cerr << " visit done : node = " << result << std::endl;
-#endif
-
-    return result;
+    return node_ident;
 }
 
 /**********************/
 /* Visit Declarations */
 /**********************/
 
-bool ClangToDot::VisitDecl(clang::Decl * decl, std::string & name) {
+bool ClangToDot::VisitDecl(clang::Decl * decl, ClangToDot::NodeDescriptor & node_desc) {
     // TODO
 
     return true;
 }
 
-bool ClangToDot::VisitRecordDecl(clang::RecordDecl * record_decl, std::string & name) {
+bool ClangToDot::VisitRecordDecl(clang::RecordDecl * record_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     clang::RecordDecl * prev_record_decl = record_decl->getPreviousDeclaration();
@@ -114,10 +100,10 @@ bool ClangToDot::VisitRecordDecl(clang::RecordDecl * record_decl, std::string & 
         // TODO
     }
 
-    return VisitDecl(record_decl, name) && res;
+    return VisitDecl(record_decl, node_desc) && res;
 }
 
-bool ClangToDot::VisitCXXRecordDecl(clang::CXXRecordDecl * cxx_record_decl, std::string & name) {
+bool ClangToDot::VisitCXXRecordDecl(clang::CXXRecordDecl * cxx_record_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     clang::RecordDecl * prev_record_decl = cxx_record_decl->getPreviousDeclaration();
@@ -160,10 +146,10 @@ bool ClangToDot::VisitCXXRecordDecl(clang::CXXRecordDecl * cxx_record_decl, std:
 
     clang::CXXDestructorDecl * destructor = cxx_record_decl->getDestructor();
 
-    return VisitDecl(cxx_record_decl, name) && res;
+    return VisitDecl(cxx_record_decl, node_desc) && res;
 }
 
-bool ClangToDot::VisitEnumDecl(clang::EnumDecl * enum_decl, std::string & name) {
+bool ClangToDot::VisitEnumDecl(clang::EnumDecl * enum_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     enum_decl->getNameAsString();
@@ -175,20 +161,20 @@ bool ClangToDot::VisitEnumDecl(clang::EnumDecl * enum_decl, std::string & name) 
         // TODO
     }
 
-    return VisitDecl(enum_decl, name) && res;
+    return VisitDecl(enum_decl, node_desc) && res;
 }
 
-bool ClangToDot::VisitTypedefDecl(clang::TypedefDecl * typedef_decl, std::string & name) {
+bool ClangToDot::VisitTypedefDecl(clang::TypedefDecl * typedef_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     typedef_decl->getNameAsString();
 
     typedef_decl->getUnderlyingType();
 
-    return VisitDecl(typedef_decl, name) && res;
+    return VisitDecl(typedef_decl, node_desc) && res;
 }
 
-bool ClangToDot::VisitFieldDecl(clang::FieldDecl * field_decl, std::string & name) {
+bool ClangToDot::VisitFieldDecl(clang::FieldDecl * field_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
     
     field_decl->getNameAsString();
@@ -197,10 +183,10 @@ bool ClangToDot::VisitFieldDecl(clang::FieldDecl * field_decl, std::string & nam
 
     clang::Expr * init_expr = field_decl->getInClassInitializer();
 
-    return VisitDecl(field_decl, name) && res; 
+    return VisitDecl(field_decl, node_desc) && res; 
 }
 
-bool ClangToDot::VisitFunctionDecl(clang::FunctionDecl * function_decl, std::string & name) {
+bool ClangToDot::VisitFunctionDecl(clang::FunctionDecl * function_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     // TODO previous
@@ -217,10 +203,10 @@ bool ClangToDot::VisitFunctionDecl(clang::FunctionDecl * function_decl, std::str
         function_decl->getBody();
     }
 
-    return VisitDecl(function_decl, name) && res;
+    return VisitDecl(function_decl, node_desc) && res;
 }
 
-bool ClangToDot::VisitVarDecl(clang::VarDecl * var_decl, std::string & name) {
+bool ClangToDot::VisitVarDecl(clang::VarDecl * var_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     var_decl->getNameAsString();
@@ -229,10 +215,10 @@ bool ClangToDot::VisitVarDecl(clang::VarDecl * var_decl, std::string & name) {
 
     clang::Expr * init_expr = var_decl->getInit();
 
-    return VisitDecl(var_decl, name) && res;
+    return VisitDecl(var_decl, node_desc) && res;
 }
 
-bool ClangToDot::VisitParmVarDecl(clang::ParmVarDecl * param_var_decl, std::string & name) {
+bool ClangToDot::VisitParmVarDecl(clang::ParmVarDecl * param_var_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     param_var_decl->getNameAsString();
@@ -243,10 +229,10 @@ bool ClangToDot::VisitParmVarDecl(clang::ParmVarDecl * param_var_decl, std::stri
         param_var_decl->getDefaultArg();
     }
 
-    return VisitDecl(param_var_decl, name) && res;
+    return VisitDecl(param_var_decl, node_desc) && res;
 }
 
-bool  ClangToDot::VisitEnumConstantDecl(clang::EnumConstantDecl * enum_constant_decl, std::string & name) {
+bool  ClangToDot::VisitEnumConstantDecl(clang::EnumConstantDecl * enum_constant_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     enum_constant_decl->getNameAsString();
@@ -257,10 +243,10 @@ bool  ClangToDot::VisitEnumConstantDecl(clang::EnumConstantDecl * enum_constant_
         enum_constant_decl->getInitExpr();
     }
 
-    return VisitDecl(enum_constant_decl, name) && res;
+    return VisitDecl(enum_constant_decl, node_desc) && res;
 }
 
-bool ClangToDot::VisitTranslationUnitDecl(clang::TranslationUnitDecl * translation_unit_decl, std::string & name) {
+bool ClangToDot::VisitTranslationUnitDecl(clang::TranslationUnitDecl * translation_unit_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     clang::DeclContext::decl_iterator it;
@@ -268,5 +254,5 @@ bool ClangToDot::VisitTranslationUnitDecl(clang::TranslationUnitDecl * translati
         *it;
     }
 
-    return VisitDecl(translation_unit_decl, name) && res;
+    return VisitDecl(translation_unit_decl, node_desc) && res;
 }

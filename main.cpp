@@ -3,15 +3,21 @@
 
 #include <iostream>
 #include <fstream>
+#include <cassert>
 
 int main(int argc, char ** argv) {
+    if (argc <= 1) {
+        std::cerr << "Need arguments..." << std::endl;
+        exit(-1);
+    }
+
     std::vector<std::string> inc_dirs_list;
     std::vector<std::string> define_list;
     std::vector<std::string> inc_list;
     std::string input_file;
     std::string output_file;
 
-    for (int i = 0; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         std::string current_arg(argv[i]);
         if (current_arg.find("-I") == 0) {
             if (current_arg.length() > 2) {
@@ -47,6 +53,11 @@ int main(int argc, char ** argv) {
         else {
             input_file = current_arg;
         }
+    }
+
+    if (input_file == "") {
+        std::cerr << "Cannot determine the input file..." << std::endl;
+        exit(-1);
     }
     
     if (output_file == "")    

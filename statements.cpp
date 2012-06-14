@@ -11,128 +11,133 @@ std::string ClangToDot::Traverse(clang::Stmt * stmt) {
     if (stmt == NULL)
         return NULL;
 
+    // Look for previous translation
     std::map<clang::Stmt *, std::string>::iterator it = p_stmt_translation_map.find(stmt);
     if (it != p_stmt_translation_map.end())
         return it->second; 
 
-    std::string result;
+    // If first time, create a new entry
+    std::string node_ident = "";
+    p_stmt_translation_map.insert(std::pair<clang::Stmt *, std::string>(stmt, node_ident));
+    NodeDescriptor & node_desc = p_node_desc.insert(std::pair<std::string, NodeDescriptor>(node_ident, NodeDescriptor(node_ident))).first->second;
+
     bool ret_status = false;
 
     switch (stmt->getStmtClass()) {
         case clang::Stmt::InitListExprClass:
-            ret_status = VisitInitListExpr((clang::InitListExpr *)stmt, result);
+            ret_status = VisitInitListExpr((clang::InitListExpr *)stmt, node_desc);
             break;
         case clang::Stmt::DesignatedInitExprClass:
-            ret_status = VisitDesignatedInitExpr((clang::DesignatedInitExpr *)stmt, result);
+            ret_status = VisitDesignatedInitExpr((clang::DesignatedInitExpr *)stmt, node_desc);
             break;
         case clang::Stmt::IntegerLiteralClass:
-            ret_status = VisitIntegerLiteral((clang::IntegerLiteral *)stmt, result);
+            ret_status = VisitIntegerLiteral((clang::IntegerLiteral *)stmt, node_desc);
             break;
         case clang::Stmt::FloatingLiteralClass:
-            ret_status = VisitFloatingLiteral((clang::FloatingLiteral *)stmt, result);
+            ret_status = VisitFloatingLiteral((clang::FloatingLiteral *)stmt, node_desc);
             break;
         case clang::Stmt::ImaginaryLiteralClass:
-            ret_status = VisitImaginaryLiteral((clang::ImaginaryLiteral *)stmt, result);
+            ret_status = VisitImaginaryLiteral((clang::ImaginaryLiteral *)stmt, node_desc);
             break;
         case clang::Stmt::CompoundLiteralExprClass:
-            ret_status = VisitCompoundLiteralExpr((clang::CompoundLiteralExpr *)stmt, result);
+            ret_status = VisitCompoundLiteralExpr((clang::CompoundLiteralExpr *)stmt, node_desc);
             break;
         case clang::Stmt::ImplicitCastExprClass:
-            ret_status = VisitImplicitCastExpr((clang::ImplicitCastExpr *)stmt, result);
+            ret_status = VisitImplicitCastExpr((clang::ImplicitCastExpr *)stmt, node_desc);
             break;
         case clang::Stmt::CharacterLiteralClass:
-            ret_status = VisitCharacterLiteral((clang::CharacterLiteral *)stmt, result);
+            ret_status = VisitCharacterLiteral((clang::CharacterLiteral *)stmt, node_desc);
             break;
         case clang::Stmt::ParenExprClass:
-            ret_status = VisitParenExpr((clang::ParenExpr *)stmt, result);
+            ret_status = VisitParenExpr((clang::ParenExpr *)stmt, node_desc);
             break;
         case clang::Stmt::PredefinedExprClass:
-            ret_status = VisitPredefinedExpr((clang::PredefinedExpr *)stmt, result);
+            ret_status = VisitPredefinedExpr((clang::PredefinedExpr *)stmt, node_desc);
             break;
         case clang::Stmt::StmtExprClass:
-            ret_status = VisitStmtExpr((clang::StmtExpr *)stmt, result);
+            ret_status = VisitStmtExpr((clang::StmtExpr *)stmt, node_desc);
             break;
         case clang::Stmt::StringLiteralClass:
-            ret_status = VisitStringLiteral((clang::StringLiteral *)stmt, result);
+            ret_status = VisitStringLiteral((clang::StringLiteral *)stmt, node_desc);
             break;
         case clang::Stmt::UnaryExprOrTypeTraitExprClass:
-            ret_status = VisitUnaryExprOrTypeTraitExpr((clang::UnaryExprOrTypeTraitExpr *)stmt, result);
+            ret_status = VisitUnaryExprOrTypeTraitExpr((clang::UnaryExprOrTypeTraitExpr *)stmt, node_desc);
             break;
         case clang::Stmt::ExtVectorElementExprClass:
-            ret_status = VisitExtVectorElementExpr((clang::ExtVectorElementExpr *)stmt, result);
+            ret_status = VisitExtVectorElementExpr((clang::ExtVectorElementExpr *)stmt, node_desc);
             break;
         case clang::Stmt::BreakStmtClass:
-            ret_status = VisitBreakStmt((clang::BreakStmt *)stmt, result);
+            ret_status = VisitBreakStmt((clang::BreakStmt *)stmt, node_desc);
             break;
         case clang::Stmt::CompoundStmtClass:
-            ret_status = VisitCompoundStmt((clang::CompoundStmt *)stmt, result);
+            ret_status = VisitCompoundStmt((clang::CompoundStmt *)stmt, node_desc);
             break;
         case clang::Stmt::ContinueStmtClass:
-            ret_status = VisitContinueStmt((clang::ContinueStmt *)stmt, result);
+            ret_status = VisitContinueStmt((clang::ContinueStmt *)stmt, node_desc);
             break;
         case clang::Stmt::DeclStmtClass:
-            ret_status = VisitDeclStmt((clang::DeclStmt *)stmt, result);
+            ret_status = VisitDeclStmt((clang::DeclStmt *)stmt, node_desc);
             break;
         case clang::Stmt::CallExprClass:
-            ret_status = VisitCallExpr((clang::CallExpr *)stmt, result);
+            ret_status = VisitCallExpr((clang::CallExpr *)stmt, node_desc);
             break;
         case clang::Stmt::CStyleCastExprClass:
-            ret_status = VisitCStyleCastExpr((clang::CStyleCastExpr *)stmt, result);
+            ret_status = VisitCStyleCastExpr((clang::CStyleCastExpr *)stmt, node_desc);
             break;
         case clang::Stmt::DeclRefExprClass:
-            ret_status = VisitDeclRefExpr((clang::DeclRefExpr *)stmt, result);
+            ret_status = VisitDeclRefExpr((clang::DeclRefExpr *)stmt, node_desc);
             break;
         case clang::Stmt::UnaryOperatorClass:
-            ret_status = VisitUnaryOperator((clang::UnaryOperator *)stmt, result);
+            ret_status = VisitUnaryOperator((clang::UnaryOperator *)stmt, node_desc);
             break;
         case clang::Stmt::VAArgExprClass:
-            ret_status = VisitVAArgExpr((clang::VAArgExpr *)stmt, result);
+            ret_status = VisitVAArgExpr((clang::VAArgExpr *)stmt, node_desc);
             break;
         case clang::Stmt::ForStmtClass:
-            ret_status = VisitForStmt((clang::ForStmt *)stmt, result);
+            ret_status = VisitForStmt((clang::ForStmt *)stmt, node_desc);
             break;
         case clang::Stmt::IfStmtClass:
-            ret_status = VisitIfStmt((clang::IfStmt *)stmt, result);
+            ret_status = VisitIfStmt((clang::IfStmt *)stmt, node_desc);
             break;
         case clang::Stmt::DoStmtClass:
-            ret_status = VisitDoStmt((clang::DoStmt *)stmt, result);
+            ret_status = VisitDoStmt((clang::DoStmt *)stmt, node_desc);
             break;
         case clang::Stmt::ReturnStmtClass:
-            ret_status = VisitReturnStmt((clang::ReturnStmt *)stmt, result);
+            ret_status = VisitReturnStmt((clang::ReturnStmt *)stmt, node_desc);
             break;
         case clang::Stmt::BinaryOperatorClass:
         case clang::Stmt::CompoundAssignOperatorClass:
-            ret_status = VisitBinaryOperator((clang::BinaryOperator *)stmt, result);
+            ret_status = VisitBinaryOperator((clang::BinaryOperator *)stmt, node_desc);
             break;
         case clang::Stmt::ConditionalOperatorClass:
-            ret_status = VisitConditionalOperator((clang::ConditionalOperator *)stmt, result);
+            ret_status = VisitConditionalOperator((clang::ConditionalOperator *)stmt, node_desc);
             break;
         case clang::Stmt::ArraySubscriptExprClass:
-            ret_status = VisitArraySubscriptExpr((clang::ArraySubscriptExpr *)stmt, result);
+            ret_status = VisitArraySubscriptExpr((clang::ArraySubscriptExpr *)stmt, node_desc);
             break;
         case clang::Stmt::MemberExprClass:
-            ret_status = VisitMemberExpr((clang::MemberExpr *)stmt, result);
+            ret_status = VisitMemberExpr((clang::MemberExpr *)stmt, node_desc);
             break;
         case clang::Stmt::LabelStmtClass:
-            ret_status = VisitLabelStmt((clang::LabelStmt *)stmt, result);
+            ret_status = VisitLabelStmt((clang::LabelStmt *)stmt, node_desc);
             break;
         case clang::Stmt::NullStmtClass:
-            ret_status = VisitNullStmt((clang::NullStmt *)stmt, result);
+            ret_status = VisitNullStmt((clang::NullStmt *)stmt, node_desc);
             break;
         case clang::Stmt::GotoStmtClass:
-            ret_status = VisitGotoStmt((clang::GotoStmt *)stmt, result);
+            ret_status = VisitGotoStmt((clang::GotoStmt *)stmt, node_desc);
             break;
         case clang::Stmt::WhileStmtClass:
-            ret_status = VisitWhileStmt((clang::WhileStmt *)stmt, result);
+            ret_status = VisitWhileStmt((clang::WhileStmt *)stmt, node_desc);
             break;
         case clang::Stmt::CaseStmtClass:
-            ret_status = VisitCaseStmt((clang::CaseStmt *)stmt, result);
+            ret_status = VisitCaseStmt((clang::CaseStmt *)stmt, node_desc);
             break;
         case clang::Stmt::DefaultStmtClass:
-            ret_status = VisitDefaultStmt((clang::DefaultStmt *)stmt, result);
+            ret_status = VisitDefaultStmt((clang::DefaultStmt *)stmt, node_desc);
             break;
         case clang::Stmt::SwitchStmtClass:
-            ret_status = VisitSwitchStmt((clang::SwitchStmt *)stmt, result);
+            ret_status = VisitSwitchStmt((clang::SwitchStmt *)stmt, node_desc);
             break;
 //        case clang::Stmt::ImplicitValueInitExprClass: break; // FIXME
         // TODO
@@ -142,30 +147,27 @@ std::string ClangToDot::Traverse(clang::Stmt * stmt) {
     }
 
     assert(ret_status != false);
-    assert(result != "");
 
-    p_stmt_translation_map.insert(std::pair<clang::Stmt *, std::string>(stmt, result));
-
-    return result;
+    return node_ident;
 }
 
 /********************/
 /* Visit Statements */
 /********************/
 
-bool ClangToDot::VisitStmt(clang::Stmt * stmt, std::string & name) {
+bool ClangToDot::VisitStmt(clang::Stmt * stmt, ClangToDot::NodeDescriptor & node_desc) {
     // TODO
 
     return true;
 }
 
-bool ClangToDot::VisitBreakStmt(clang::BreakStmt * break_stmt, std::string & name) {
+bool ClangToDot::VisitBreakStmt(clang::BreakStmt * break_stmt, ClangToDot::NodeDescriptor & node_desc) {
     // TODO
 
-    return VisitStmt(break_stmt, name);
+    return VisitStmt(break_stmt, node_desc);
 }
 
-bool ClangToDot::VisitCompoundStmt(clang::CompoundStmt * compound_stmt, std::string & name) {
+bool ClangToDot::VisitCompoundStmt(clang::CompoundStmt * compound_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     clang::CompoundStmt::body_iterator it;
@@ -173,16 +175,16 @@ bool ClangToDot::VisitCompoundStmt(clang::CompoundStmt * compound_stmt, std::str
         *it;
     }
 
-    return VisitStmt(compound_stmt, name) && res;
+    return VisitStmt(compound_stmt, node_desc) && res;
 }
 
-bool ClangToDot::VisitContinueStmt(clang::ContinueStmt * continue_stmt, std::string & name) {
+bool ClangToDot::VisitContinueStmt(clang::ContinueStmt * continue_stmt, ClangToDot::NodeDescriptor & node_desc) {
     // TODO
 
-    return VisitStmt(continue_stmt, name);
+    return VisitStmt(continue_stmt, node_desc);
 }
 
-bool ClangToDot::VisitDeclStmt(clang::DeclStmt * decl_stmt, std::string & name) {
+bool ClangToDot::VisitDeclStmt(clang::DeclStmt * decl_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     if (decl_stmt->isSingleDecl()) {
@@ -194,28 +196,28 @@ bool ClangToDot::VisitDeclStmt(clang::DeclStmt * decl_stmt, std::string & name) 
             Traverse(*it);
     }
 
-    return VisitStmt(decl_stmt, name) && res;
+    return VisitStmt(decl_stmt, node_desc) && res;
 }
 
-bool ClangToDot::VisitDoStmt(clang::DoStmt * do_stmt, std::string & name) {
+bool ClangToDot::VisitDoStmt(clang::DoStmt * do_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     do_stmt->getCond();
 
     do_stmt->getBody();
 
-    return VisitStmt(do_stmt, name) && res;
+    return VisitStmt(do_stmt, node_desc) && res;
 }
 
-bool ClangToDot::VisitExpr(clang::Expr * expr, std::string & name) {
+bool ClangToDot::VisitExpr(clang::Expr * expr, ClangToDot::NodeDescriptor & node_desc) {
      bool res = true;
 
      // TODO
 
-     return VisitStmt(expr, name) && true;
+     return VisitStmt(expr, node_desc) && true;
 }
 
-bool ClangToDot::VisitConditionalOperator(clang::ConditionalOperator * conditional_operator, std::string & name) {
+bool ClangToDot::VisitConditionalOperator(clang::ConditionalOperator * conditional_operator, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     conditional_operator->getCond();
@@ -224,10 +226,10 @@ bool ClangToDot::VisitConditionalOperator(clang::ConditionalOperator * condition
 
     conditional_operator->getFalseExpr();
 
-    return VisitExpr(conditional_operator, name) && res;
+    return VisitExpr(conditional_operator, node_desc) && res;
 }
 
-bool ClangToDot::VisitBinaryOperator(clang::BinaryOperator * binary_operator, std::string & name) {
+bool ClangToDot::VisitBinaryOperator(clang::BinaryOperator * binary_operator, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     binary_operator->getLHS();
@@ -236,20 +238,20 @@ bool ClangToDot::VisitBinaryOperator(clang::BinaryOperator * binary_operator, st
 
     binary_operator->getOpcodeStr();
 
-    return VisitExpr(binary_operator, name) && res;
+    return VisitExpr(binary_operator, node_desc) && res;
 }
 
-bool ClangToDot::VisitArraySubscriptExpr(clang::ArraySubscriptExpr * array_subscript_expr, std::string & name) {
+bool ClangToDot::VisitArraySubscriptExpr(clang::ArraySubscriptExpr * array_subscript_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     array_subscript_expr->getBase();
 
     array_subscript_expr->getIdx();
 
-    return VisitExpr(array_subscript_expr, name) && res;
+    return VisitExpr(array_subscript_expr, node_desc) && res;
 }
 
-bool ClangToDot::VisitCallExpr(clang::CallExpr * call_expr, std::string & name) {
+bool ClangToDot::VisitCallExpr(clang::CallExpr * call_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     call_expr->getCallee();
@@ -259,72 +261,72 @@ bool ClangToDot::VisitCallExpr(clang::CallExpr * call_expr, std::string & name) 
         *it;
     }
 
-    return VisitExpr(call_expr, name) && res;
+    return VisitExpr(call_expr, node_desc) && res;
 }
 
-bool ClangToDot::VisitCastExpr(clang::CastExpr * cast, std::string & name) {
+bool ClangToDot::VisitCastExpr(clang::CastExpr * cast, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     // TODO check 'name' is set
 
     cast->getSubExpr();
 
-    return VisitExpr(cast, name) && res;
+    return VisitExpr(cast, node_desc) && res;
 }
 
-bool ClangToDot::VisitExplicitCastExpr(clang::ExplicitCastExpr * explicit_cast_expr, std::string & name) {
+bool ClangToDot::VisitExplicitCastExpr(clang::ExplicitCastExpr * explicit_cast_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     // TODO check 'name' is set
 
     explicit_cast_expr->getTypeAsWritten();
 
-    return VisitCastExpr(explicit_cast_expr,name) && res;
+    return VisitCastExpr(explicit_cast_expr, node_desc) && res;
 }
 
-bool ClangToDot::VisitCStyleCastExpr(clang::CStyleCastExpr * c_style_cast, std::string & name) {
+bool ClangToDot::VisitCStyleCastExpr(clang::CStyleCastExpr * c_style_cast, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     // TODO
 
-    return VisitCastExpr(c_style_cast, name) && res;
+    return VisitCastExpr(c_style_cast, node_desc) && res;
 }
 
-bool ClangToDot::VisitImplicitCastExpr(clang::ImplicitCastExpr * implicit_cast_expr, std::string & name) {
+bool ClangToDot::VisitImplicitCastExpr(clang::ImplicitCastExpr * implicit_cast_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     // TODO
 
-    return VisitCastExpr(implicit_cast_expr, name) && res;
+    return VisitCastExpr(implicit_cast_expr, node_desc) && res;
 }
 
-bool ClangToDot::VisitCharacterLiteral(clang::CharacterLiteral * character_literal, std::string & name) {
+bool ClangToDot::VisitCharacterLiteral(clang::CharacterLiteral * character_literal, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     character_literal->getValue();
 
-    return VisitExpr(character_literal, name) && res;
+    return VisitExpr(character_literal, node_desc) && res;
 }
 
-bool ClangToDot::VisitCompoundLiteralExpr(clang::CompoundLiteralExpr * compound_literal, std::string & name) {
+bool ClangToDot::VisitCompoundLiteralExpr(clang::CompoundLiteralExpr * compound_literal, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     compound_literal->getInitializer();
 
     compound_literal->getType();
 
-    return VisitExpr(compound_literal, name) && res;
+    return VisitExpr(compound_literal, node_desc) && res;
 }
 
-bool ClangToDot::VisitDeclRefExpr(clang::DeclRefExpr * decl_ref_expr, std::string & name) {
+bool ClangToDot::VisitDeclRefExpr(clang::DeclRefExpr * decl_ref_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     decl_ref_expr->getDecl();
 
-    return VisitExpr(decl_ref_expr, name) && res;
+    return VisitExpr(decl_ref_expr, node_desc) && res;
 }
 
-bool ClangToDot::VisitDesignatedInitExpr(clang::DesignatedInitExpr * designated_init_expr, std::string & name) {
+bool ClangToDot::VisitDesignatedInitExpr(clang::DesignatedInitExpr * designated_init_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     designated_init_expr->getInit();
@@ -343,10 +345,10 @@ bool ClangToDot::VisitDesignatedInitExpr(clang::DesignatedInitExpr * designated_
         else assert(false);
     }
 
-    return VisitExpr(designated_init_expr, name) && res;
+    return VisitExpr(designated_init_expr, node_desc) && res;
 }
 
-bool ClangToDot::VisitExtVectorElementExpr(clang::ExtVectorElementExpr * ext_vector_element_expr, std::string & name) {
+bool ClangToDot::VisitExtVectorElementExpr(clang::ExtVectorElementExpr * ext_vector_element_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     ext_vector_element_expr->getBase();
@@ -363,10 +365,10 @@ bool ClangToDot::VisitExtVectorElementExpr(clang::ExtVectorElementExpr * ext_vec
         // TODO
     }
 
-   return VisitExpr(ext_vector_element_expr, name) && res;
+   return VisitExpr(ext_vector_element_expr, node_desc) && res;
 }
 
-bool ClangToDot::VisitFloatingLiteral(clang::FloatingLiteral * floating_literal, std::string & name) {
+bool ClangToDot::VisitFloatingLiteral(clang::FloatingLiteral * floating_literal, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     // FIXME
@@ -379,18 +381,18 @@ bool ClangToDot::VisitFloatingLiteral(clang::FloatingLiteral * floating_literal,
     else
         assert(!"In VisitFloatingLiteral: Unsupported float size");
 
-    return VisitExpr(floating_literal, name) && res;
+    return VisitExpr(floating_literal, node_desc) && res;
 }
 
-bool ClangToDot::VisitImaginaryLiteral(clang::ImaginaryLiteral * imaginary_literal, std::string & name) {
+bool ClangToDot::VisitImaginaryLiteral(clang::ImaginaryLiteral * imaginary_literal, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     imaginary_literal->getSubExpr();
 
-    return VisitExpr(imaginary_literal, name) && res;
+    return VisitExpr(imaginary_literal, node_desc) && res;
 }
 
-bool ClangToDot::VisitInitListExpr(clang::InitListExpr * init_list_expr, std::string & name) {
+bool ClangToDot::VisitInitListExpr(clang::InitListExpr * init_list_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     init_list_expr->getSyntacticForm();
@@ -400,18 +402,18 @@ bool ClangToDot::VisitInitListExpr(clang::InitListExpr * init_list_expr, std::st
         *it;
     }
 
-    return VisitExpr(init_list_expr, name) && res;
+    return VisitExpr(init_list_expr, node_desc) && res;
 }
 
-bool ClangToDot::VisitIntegerLiteral(clang::IntegerLiteral * integer_literal, std::string & name) {
+bool ClangToDot::VisitIntegerLiteral(clang::IntegerLiteral * integer_literal, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     integer_literal->getValue();
 
-    return VisitExpr(integer_literal, name) && res;
+    return VisitExpr(integer_literal, node_desc) && res;
 }
 
-bool ClangToDot::VisitMemberExpr(clang::MemberExpr * member_expr, std::string & name) {
+bool ClangToDot::VisitMemberExpr(clang::MemberExpr * member_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     member_expr->getBase();
@@ -421,55 +423,55 @@ bool ClangToDot::VisitMemberExpr(clang::MemberExpr * member_expr, std::string & 
     if (member_expr->isArrow()) {}
     else {}
 
-    return VisitExpr(member_expr, name) && res;
+    return VisitExpr(member_expr, node_desc) && res;
 }
 
-bool ClangToDot::VisitParenExpr(clang::ParenExpr * paren_expr, std::string & name) {
+bool ClangToDot::VisitParenExpr(clang::ParenExpr * paren_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     paren_expr->getSubExpr();
 
-    return VisitExpr(paren_expr, name) && res;
+    return VisitExpr(paren_expr, node_desc) && res;
 }
 
-bool ClangToDot::VisitPredefinedExpr(clang::PredefinedExpr * predefined_expr, std::string & name) {
+bool ClangToDot::VisitPredefinedExpr(clang::PredefinedExpr * predefined_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     switch (predefined_expr->getIdentType()) {
         case clang::PredefinedExpr::Func:
-            name = "__func__";
+//            name = "__func__";
             break;
         case clang::PredefinedExpr::Function:
-            name = "__FUNCTION__";
+//            name = "__FUNCTION__";
             break;
         case clang::PredefinedExpr::PrettyFunction:
-            name = "__PRETTY_FUNCTION__";
+//            name = "__PRETTY_FUNCTION__";
             break;
         case clang::PredefinedExpr::PrettyFunctionNoVirtual:
             // TODO
             break;
     }
 
-    return VisitExpr(predefined_expr,  name) && res;
+    return VisitExpr(predefined_expr, node_desc) && res;
 }
 
-bool ClangToDot::VisitStmtExpr(clang::StmtExpr * stmt_expr, std::string & name) {
+bool ClangToDot::VisitStmtExpr(clang::StmtExpr * stmt_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     stmt_expr->getSubStmt();
 
-    return VisitExpr(stmt_expr, name) && res;
+    return VisitExpr(stmt_expr, node_desc) && res;
 }
 
-bool ClangToDot::VisitStringLiteral(clang::StringLiteral * string_literal, std::string & name) {
+bool ClangToDot::VisitStringLiteral(clang::StringLiteral * string_literal, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     string_literal->getString();
 
-    return VisitExpr(string_literal, name) && res;
+    return VisitExpr(string_literal, node_desc) && res;
 }
 
-bool ClangToDot::VisitUnaryExprOrTypeTraitExpr(clang::UnaryExprOrTypeTraitExpr * unary_expr_or_type_trait_expr, std::string & name) {
+bool ClangToDot::VisitUnaryExprOrTypeTraitExpr(clang::UnaryExprOrTypeTraitExpr * unary_expr_or_type_trait_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     if (unary_expr_or_type_trait_expr->isArgumentType()) {
@@ -488,10 +490,10 @@ bool ClangToDot::VisitUnaryExprOrTypeTraitExpr(clang::UnaryExprOrTypeTraitExpr *
             break;
     }
 
-    return VisitStmt(unary_expr_or_type_trait_expr, name) && res;
+    return VisitStmt(unary_expr_or_type_trait_expr, node_desc) && res;
 }
 
-bool ClangToDot::VisitUnaryOperator(clang::UnaryOperator * unary_operator, std::string & name) {
+bool ClangToDot::VisitUnaryOperator(clang::UnaryOperator * unary_operator, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     unary_operator->getSubExpr();
@@ -525,364 +527,119 @@ bool ClangToDot::VisitUnaryOperator(clang::UnaryOperator * unary_operator, std::
             break;
     }
 
-    return VisitExpr(unary_operator, name) && res;
+    return VisitExpr(unary_operator, node_desc) && res;
 }
 
-bool ClangToDot::VisitVAArgExpr(clang::VAArgExpr * va_arg_expr) {
+bool ClangToDot::VisitVAArgExpr(clang::VAArgExpr * va_arg_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
     va_arg_expr->getSubExpr();
 
-    return VisitExpr(va_arg_expr, name) && res;
+    return VisitExpr(va_arg_expr, node_desc) && res;
 }
 
-bool ClangToDot::VisitForStmt(clang::ForStmt * for_stmt) {
+bool ClangToDot::VisitForStmt(clang::ForStmt * for_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
-    SgForStatement * sg_for_stmt = SageBuilder::buildForStatement_nfi((SgForInitStatement *)NULL, NULL, NULL, NULL);
+    for_stmt->getInit();
 
-    SageBuilder::pushScopeStack(sg_for_stmt);
+    for_stmt->getCond();
 
-  // Initialization
+    for_stmt->getInc();
 
-    SgForInitStatement * for_init_stmt = NULL;
+    for_stmt->getBody();
 
-    {
-        SgStatementPtrList for_init_stmt_list;
-        SgNode * tmp_init = Traverse(for_stmt->getInit());
-        SgStatement * init_stmt = isSgStatement(tmp_init);
-        SgExpression * init_expr = isSgExpression(tmp_init);
-        if (tmp_init != NULL && init_stmt == NULL && init_expr == NULL) {
-            std::cerr << "Runtime error: tmp_init != NULL && init_stmt == NULL && init_expr == NULL (" << tmp_init->class_name() << ")" << std::endl;
-            res = false;
-        }
-        else if (init_expr != NULL) {
-            init_stmt = SageBuilder::buildExprStatement(init_expr);
-            applySourceRange(init_stmt, for_stmt->getInit()->getSourceRange());
-        }
-        if (init_stmt != NULL)
-            for_init_stmt_list.push_back(init_stmt);
-        for_init_stmt = SageBuilder::buildForInitStatement_nfi(for_init_stmt_list);
-        if (for_stmt->getInit() != NULL)
-            applySourceRange(for_init_stmt, for_stmt->getInit()->getSourceRange());
-        else
-            setCompilerGeneratedFileInfo(for_init_stmt, true);
-    }
-
-  // Condition
-
-    SgStatement * cond_stmt = NULL;
-
-    {
-        SgNode * tmp_cond = Traverse(for_stmt->getCond());
-        SgExpression * cond = isSgExpression(tmp_cond);
-        if (tmp_cond != NULL && cond == NULL) {
-            std::cerr << "Runtime error: tmp_cond != NULL && cond == NULL" << std::endl;
-            res = false;
-        }
-        if (cond != NULL) { 
-            cond_stmt = SageBuilder::buildExprStatement(cond);
-            applySourceRange(cond_stmt, for_stmt->getCond()->getSourceRange());
-        }
-        else {
-            cond_stmt = SageBuilder::buildNullStatement_nfi();
-            setCompilerGeneratedFileInfo(cond_stmt);
-        }
-    }
-
-  // Increment
-
-    SgExpression * inc = NULL;
-
-    {
-        SgNode * tmp_inc  = Traverse(for_stmt->getInc());
-        inc = isSgExpression(tmp_inc);
-        if (tmp_inc != NULL && inc == NULL) {
-            std::cerr << "Runtime error: tmp_inc != NULL && inc == NULL" << std::endl;
-            res = false;
-        }
-        if (inc == NULL) {
-            inc = SageBuilder::buildNullExpression_nfi();
-            setCompilerGeneratedFileInfo(inc);
-        }
-    }
-
-  // Body
-
-    SgStatement * body = NULL;
-
-    {
-        SgNode * tmp_body = Traverse(for_stmt->getBody());
-        body = isSgStatement(tmp_body);
-        if (body == NULL) {
-            SgExpression * body_expr = isSgExpression(tmp_body);
-            if (body_expr != NULL) {
-                body = SageBuilder::buildExprStatement(body_expr);
-                applySourceRange(body, for_stmt->getBody()->getSourceRange());
-            }
-        }
-        if (tmp_body != NULL && body == NULL) {
-            std::cerr << "Runtime error: tmp_body != NULL && body == NULL" << std::endl;
-            res = false;
-        }
-        if (body == NULL) {
-            body = SageBuilder::buildNullStatement_nfi();
-            setCompilerGeneratedFileInfo(body);
-        }
-    }
-
-    SageBuilder::popScopeStack();
-
-  // Attach sub trees to the for statement
-
-    for_init_stmt->set_parent(sg_for_stmt);
-    if (sg_for_stmt->get_for_init_stmt() != NULL)
-        SageInterface::deleteAST(sg_for_stmt->get_for_init_stmt());
-    sg_for_stmt->set_for_init_stmt(for_init_stmt);
-
-    if (cond_stmt != NULL) {
-        cond_stmt->set_parent(sg_for_stmt);
-        sg_for_stmt->set_test(cond_stmt);
-    }
-
-    if (inc != NULL) {
-        inc->set_parent(sg_for_stmt);
-        sg_for_stmt->set_increment(inc);
-    }
-
-    if (body != NULL) {
-        body->set_parent(sg_for_stmt);
-        sg_for_stmt->set_loop_body(body);
-    }
-
-    *node = sg_for_stmt;
-
-    return VisitStmt(for_stmt, node) && res;
+    return VisitStmt(for_stmt, node_desc) && res;
 }
 
-bool ClangToDot::VisitGotoStmt(clang::GotoStmt * goto_stmt) {
-    bool res = true;
-/*
-    SgSymbol * tmp_sym = GetSymbolFromSymbolTable(goto_stmt->getLabel());
-    SgLabelSymbol * sym = isSgLabelSymbol(tmp_sym);
-    if (sym == NULL) {
-        std::cerr << "Runtime error: Cannot find the symbol for the label: \"" << goto_stmt->getLabel()->getStmt()->getName() << "\"." << std::endl;
-        res = false;
-    }
-    else {
-        *node = SageBuilder::buildGotoStatement(sym->get_declaration());
-    }
-*/
-
-    SgNode * tmp_label = Traverse(goto_stmt->getLabel()->getStmt());
-    SgLabelStatement * label_stmt = isSgLabelStatement(tmp_label);
-    if (label_stmt == NULL) {
-        std::cerr << "Runtime Error: Cannot find the label: \"" << goto_stmt->getLabel()->getStmt()->getName() << "\"." << std::endl;
-        res = false;
-    }
-    else {
-        *node = SageBuilder::buildGotoStatement(label_stmt);
-    }
-
-    return VisitStmt(goto_stmt, node) && res;
-}
-
-bool ClangToDot::VisitIfStmt(clang::IfStmt * if_stmt) {
+bool ClangToDot::VisitGotoStmt(clang::GotoStmt * goto_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
-    // TODO if_stmt->getConditionVariable() appears when a variable is declared in the condition...
+    goto_stmt->getLabel()->getStmt();
 
-    *node = SageBuilder::buildIfStmt_nfi(NULL, NULL, NULL);
-
-    SageBuilder::pushScopeStack(isSgScopeStatement(*node));
-
-    SgNode * tmp_cond = Traverse(if_stmt->getCond());
-    SgExpression * cond_expr = isSgExpression(tmp_cond);
-    SgStatement * cond_stmt = SageBuilder::buildExprStatement(cond_expr);
-    applySourceRange(cond_stmt, if_stmt->getCond()->getSourceRange());
-
-    SgNode * tmp_then = Traverse(if_stmt->getThen());
-    SgStatement * then_stmt = isSgStatement(tmp_then);
-    if (then_stmt == NULL) {
-        SgExpression * then_expr = isSgExpression(tmp_then);
-        ROSE_ASSERT(then_expr != NULL);
-        then_stmt = SageBuilder::buildExprStatement(then_expr);
-    }
-    applySourceRange(then_stmt, if_stmt->getThen()->getSourceRange());
-
-    SgNode * tmp_else = Traverse(if_stmt->getElse());
-    SgStatement * else_stmt = isSgStatement(tmp_else);
-    if (else_stmt == NULL) {
-        SgExpression * else_expr = isSgExpression(tmp_else);
-        if (else_expr != NULL)
-            else_stmt = SageBuilder::buildExprStatement(else_expr);
-    }
-    if (else_stmt != NULL) applySourceRange(else_stmt, if_stmt->getElse()->getSourceRange());
-
-    SageBuilder::popScopeStack();
-
-    cond_stmt->set_parent(*node);
-    isSgIfStmt(*node)->set_conditional(cond_stmt);
-
-    then_stmt->set_parent(*node);
-    isSgIfStmt(*node)->set_true_body(then_stmt);
-    if (else_stmt != NULL) {
-      else_stmt->set_parent(*node);
-      isSgIfStmt(*node)->set_false_body(else_stmt);
-    }
-
-    return VisitStmt(if_stmt, node) && res;
+    return VisitStmt(goto_stmt, node_desc) && res;
 }
 
-bool ClangToDot::VisitLabelStmt(clang::LabelStmt * label_stmt) {
+bool ClangToDot::VisitIfStmt(clang::IfStmt * if_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
-    SgName name(label_stmt->getName());
+    if_stmt->getCond();
 
-    SgNode * tmp_sub_stmt = Traverse(label_stmt->getSubStmt());
-    SgStatement * sg_sub_stmt = isSgStatement(tmp_sub_stmt);
-    if (sg_sub_stmt == NULL) {
-        SgExpression * sg_sub_expr = isSgExpression(tmp_sub_stmt);
-        ROSE_ASSERT(sg_sub_expr != NULL);
-        sg_sub_stmt = SageBuilder::buildExprStatement(sg_sub_expr);
-    }
+    if_stmt->getThen();
 
-    ROSE_ASSERT(sg_sub_stmt != NULL);
+    if_stmt->getElse();
 
-    *node = SageBuilder::buildLabelStatement_nfi(name, sg_sub_stmt, SageBuilder::topScopeStack());
-
-    SgLabelStatement * sg_label_stmt = isSgLabelStatement(*node);
-    SgFunctionDefinition * label_scope = NULL;
-    std::list<SgScopeStatement *>::reverse_iterator it = SageBuilder::ScopeStack.rbegin();
-    while (it != SageBuilder::ScopeStack.rend() && label_scope == NULL) {
-        label_scope = isSgFunctionDefinition(*it);
-        it++;
-    }
-    if (label_scope == NULL) {
-         std::cerr << "Runtime error: Cannot find a surrounding function definition for the label statement: \"" << name << "\"." << std::endl;
-         res = false;
-    }
-    else {
-        sg_label_stmt->set_scope(label_scope);
-        SgLabelSymbol* label_sym = new SgLabelSymbol(sg_label_stmt);
-        label_scope->insert_symbol(label_sym->get_name(), label_sym);
-    }
-
-    return VisitStmt(label_stmt, node) && res;
+    return VisitStmt(if_stmt, node_desc) && res;
 }
 
-bool ClangToDot::VisitNullStmt(clang::NullStmt * null_stmt) {
-    *node = SageBuilder::buildNullStatement_nfi();
-    return VisitStmt(null_stmt, node);
-}
-
-bool ClangToDot::VisitReturnStmt(clang::ReturnStmt * return_stmt) {
+bool ClangToDot::VisitLabelStmt(clang::LabelStmt * label_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
-    SgNode * tmp_expr = Traverse(return_stmt->getRetValue());
-    SgExpression * expr = isSgExpression(tmp_expr);
-    if (tmp_expr != NULL && expr == NULL) {
-        std::cerr << "Runtime error: tmp_expr != NULL && expr == NULL" << std::endl;
-        res = false;
-    }
-    *node = SageBuilder::buildReturnStmt(expr);
+    label_stmt->getName();
 
-    return VisitStmt(return_stmt, node) && res;
+    label_stmt->getSubStmt();
+
+    return VisitStmt(label_stmt, node_desc) && res;
 }
 
-bool ClangToDot::VisitCaseStmt(clang::CaseStmt * case_stmt) {
-    SgNode * tmp_stmt = Traverse(case_stmt->getSubStmt());
-    SgStatement * stmt = isSgStatement(tmp_stmt);
-    SgExpression * expr = isSgExpression(tmp_stmt);
-    if (expr != NULL) {
-        stmt = SageBuilder::buildExprStatement(expr);
-        applySourceRange(stmt, case_stmt->getSubStmt()->getSourceRange());
-    }
-    ROSE_ASSERT(stmt != NULL);
+bool ClangToDot::VisitNullStmt(clang::NullStmt * null_stmt, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
 
-    SgNode * tmp_lhs = Traverse(case_stmt->getLHS());
-    SgExpression * lhs = isSgExpression(tmp_lhs);
-    ROSE_ASSERT(lhs != NULL);
+    // TODO
 
-/*  FIXME GNU extension not-handled by ROSE
-    SgNode * tmp_rhs = Traverse(case_stmt->getRHS());
-    SgExpression * rhs = isSgExpression(tmp_rhs);
-    ROSE_ASSERT(rhs != NULL);
-*/
-    ROSE_ASSERT(case_stmt->getRHS() == NULL);
-
-    *node = SageBuilder::buildCaseOptionStmt_nfi(lhs, stmt);
-
-    return VisitStmt(case_stmt, node);
+    return VisitStmt(null_stmt, node_desc) && res;
 }
 
-bool ClangToDot::VisitDefaultStmt(clang::DefaultStmt * default_stmt) {
-    SgNode * tmp_stmt = Traverse(default_stmt->getSubStmt());
-    SgStatement * stmt = isSgStatement(tmp_stmt);
+bool ClangToDot::VisitReturnStmt(clang::ReturnStmt * return_stmt, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
 
-    *node = SageBuilder::buildDefaultOptionStmt_nfi(stmt);
+    return_stmt->getRetValue();
 
-    return VisitStmt(default_stmt, node);
+    return VisitStmt(return_stmt, node_desc) && res;
 }
 
-bool ClangToDot::VisitSwitchStmt(clang::SwitchStmt * switch_stmt) {
-    SgNode * tmp_cond = Traverse(switch_stmt->getCond());
-    SgExpression * cond = isSgExpression(tmp_cond);
-    ROSE_ASSERT(cond != NULL);
+bool ClangToDot::VisitSwitchCase(clang::SwitchCase * switch_case, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    switch_case->getSubStmt();
+
+    return VisitStmt(switch_case, node_desc) && res;
+}
+
+bool ClangToDot::VisitCaseStmt(clang::CaseStmt * case_stmt, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    case_stmt->getLHS();
+
+    case_stmt->getRHS();
+
+    return VisitSwitchCase(case_stmt, node_desc) && res;
+}
+
+bool ClangToDot::VisitDefaultStmt(clang::DefaultStmt * default_stmt, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;    
+
+    // TODO
+
+    return VisitSwitchCase(default_stmt, node_desc) && res;
+}
+
+bool ClangToDot::VisitSwitchStmt(clang::SwitchStmt * switch_stmt, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    switch_stmt->getCond();
     
-    SgStatement * expr_stmt = SageBuilder::buildExprStatement(cond);
-        applySourceRange(expr_stmt, switch_stmt->getCond()->getSourceRange());
+    switch_stmt->getBody();
 
-    SgSwitchStatement * sg_switch_stmt = SageBuilder::buildSwitchStatement_nfi(expr_stmt, NULL);
-
-    cond->set_parent(expr_stmt);
-    expr_stmt->set_parent(sg_switch_stmt);
-
-    SageBuilder::pushScopeStack(sg_switch_stmt);
-
-    SgNode * tmp_body = Traverse(switch_stmt->getBody());
-    SgStatement * body = isSgStatement(tmp_body);
-    ROSE_ASSERT(body != NULL);
-
-    SageBuilder::popScopeStack();
-
-    sg_switch_stmt->set_body(body);
-
-    *node = sg_switch_stmt;
-
-    return VisitStmt(switch_stmt, node);
+    return VisitStmt(switch_stmt, node_desc) && res;
 }
 
-bool ClangToDot::VisitWhileStmt(clang::WhileStmt * while_stmt) {
-    SgNode * tmp_cond = Traverse(while_stmt->getCond());
-    SgExpression * cond = isSgExpression(tmp_cond);
-    ROSE_ASSERT(cond != NULL);
+bool ClangToDot::VisitWhileStmt(clang::WhileStmt * while_stmt, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
 
-    SgStatement * expr_stmt = SageBuilder::buildExprStatement(cond);
+    while_stmt->getCond();
 
-    SgWhileStmt * sg_while_stmt = SageBuilder::buildWhileStmt_nfi(expr_stmt, NULL);
+    while_stmt->getBody();
 
-    cond->set_parent(expr_stmt);
-    expr_stmt->set_parent(sg_while_stmt);
-
-    SageBuilder::pushScopeStack(sg_while_stmt);
-
-    SgNode * tmp_body = Traverse(while_stmt->getBody());
-    SgStatement * body = isSgStatement(tmp_body);
-    SgExpression * expr = isSgExpression(tmp_body);
-    if (expr != NULL) {
-        body =  SageBuilder::buildExprStatement(expr);
-        applySourceRange(body, while_stmt->getBody()->getSourceRange());
-    }
-    ROSE_ASSERT(body != NULL);
-
-    body->set_parent(sg_while_stmt);
-
-    SageBuilder::popScopeStack();
-
-    sg_while_stmt->set_body(body);
-
-    *node = sg_while_stmt;
-
-    return VisitStmt(while_stmt, node);
+    return VisitStmt(while_stmt, node_desc) && res;
 }
