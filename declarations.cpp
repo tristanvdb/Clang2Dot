@@ -2,6 +2,8 @@
 #include "clang-to-dot.hpp"
 
 #include <iostream>
+#include <sstream>
+#include <string>
 
 /*************************/
 /* Traverse Declarations */
@@ -9,7 +11,7 @@
 
 std::string ClangToDot::Traverse(clang::Decl * decl) {
     if (decl == NULL)
-        return NULL;
+        return "";
 
     // Look for previous translation
     std::map<clang::Decl *, std::string>::iterator it = p_decl_translation_map.find(decl);
@@ -17,7 +19,7 @@ std::string ClangToDot::Traverse(clang::Decl * decl) {
         return it->second;
 
     // If first time, create a new entry
-    std::string node_ident = "";
+    std::string node_ident = genNextIdent();
     p_decl_translation_map.insert(std::pair<clang::Decl *, std::string>(decl, node_ident));
     NodeDescriptor & node_desc = p_node_desc.insert(std::pair<std::string, NodeDescriptor>(node_ident, NodeDescriptor(node_ident))).first->second;
 
@@ -70,54 +72,63 @@ std::string ClangToDot::Traverse(clang::Decl * decl) {
 /**********************/
 
 bool ClangToDot::VisitDecl(clang::Decl * decl, ClangToDot::NodeDescriptor & node_desc) {
-    // TODO
+    node_desc.kind_hierarchy.push_back("Decl");
 
     return true;
+}
+
+bool ClangToDot::VisitNamedDecl(clang::NamedDecl * named_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("NamedDecl");
+
+    node_desc.attributes.push_back(std::pair<std::string, std::string>("name", named_decl->getNameAsString()));
+
+    return VisitDecl(named_decl, node_desc) && res;
+}
+
+bool ClangToDot::VisitTypeDecl(clang::TypeDecl * type_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("TypeDecl");
+
+    // TODO
+
+    return VisitNamedDecl(type_decl, node_desc) && res;
+}
+
+bool ClangToDot::VisitTagDecl(clang::TagDecl * tag_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("TagDecl");
+
+    node_desc.attributes.push_back(std::pair<std::string, std::string>("kind", tag_decl->getKindName()));
+
+    return VisitTypeDecl(tag_decl, node_desc) && res;
 }
 
 bool ClangToDot::VisitRecordDecl(clang::RecordDecl * record_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
-    clang::RecordDecl * prev_record_decl = record_decl->getPreviousDeclaration();
+    node_desc.kind_hierarchy.push_back("RecordDecl");
 
-  // Name
-
-    record_decl->getNameAsString();
-
-  // Type of class
-
-    record_decl->getTagKind();
-
-  // Build declaration(s)
-
-
-    record_decl->isAnonymousStructOrUnion();
-
-  // Build ClassDefinition
+    node_desc.successors.push_back(std::pair<std::string, std::string>("previous_declaration", Traverse(record_decl->getPreviousDeclaration())));
 
     clang::RecordDecl::field_iterator it;
+    unsigned cnt = 0;
     for (it = record_decl->field_begin(); it != record_decl->field_end(); it++) {
-        // TODO
+        std::ostringstream oss;
+        oss << "field[" << cnt++ << "]";
+        node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(*it)));
     }
 
-    return VisitDecl(record_decl, node_desc) && res;
+    return VisitTagDecl(record_decl, node_desc) && res;
 }
 
 bool ClangToDot::VisitCXXRecordDecl(clang::CXXRecordDecl * cxx_record_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
-    clang::RecordDecl * prev_record_decl = cxx_record_decl->getPreviousDeclaration();
-
-    cxx_record_decl->getNameAsString();
-
-    cxx_record_decl->getTagKind();
-
-    cxx_record_decl->isAnonymousStructOrUnion();
-
-    clang::RecordDecl::field_iterator it_field;
-    for (it_field = cxx_record_decl->field_begin(); it_field != cxx_record_decl->field_end(); it_field++) {
-        // TODO
-    }
+    node_desc.kind_hierarchy.push_back("CXXRecordDecl");
 
     clang::CXXRecordDecl::base_class_iterator it_base;
     for (it_base = cxx_record_decl->bases_begin(); it_base !=  cxx_record_decl->bases_end(); it_base++) {
@@ -146,11 +157,13 @@ bool ClangToDot::VisitCXXRecordDecl(clang::CXXRecordDecl * cxx_record_decl, Clan
 
     clang::CXXDestructorDecl * destructor = cxx_record_decl->getDestructor();
 
-    return VisitDecl(cxx_record_decl, node_desc) && res;
+    return VisitRecordDecl(cxx_record_decl, node_desc) && res;
 }
 
 bool ClangToDot::VisitEnumDecl(clang::EnumDecl * enum_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("EnumDecl");
 
     enum_decl->getNameAsString();
 
@@ -161,33 +174,57 @@ bool ClangToDot::VisitEnumDecl(clang::EnumDecl * enum_decl, ClangToDot::NodeDesc
         // TODO
     }
 
-    return VisitDecl(enum_decl, node_desc) && res;
+    return VisitTagDecl(enum_decl, node_desc) && res;
 }
 
 bool ClangToDot::VisitTypedefDecl(clang::TypedefDecl * typedef_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
-    typedef_decl->getNameAsString();
+    node_desc.kind_hierarchy.push_back("TypedefDecl");
 
-    typedef_decl->getUnderlyingType();
+    node_desc.attributes.push_back(std::pair<std::string, std::string>("name", typedef_decl->getNameAsString()));
+
+    node_desc.successors.push_back(std::pair<std::string, std::string>("underlying_type", Traverse(typedef_decl->getUnderlyingType().getTypePtr())));
 
     return VisitDecl(typedef_decl, node_desc) && res;
+}
+
+bool ClangToDot::VisitValueDecl(clang::ValueDecl * value_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("ValueDecl");
+
+    value_decl->getType();
+
+    return VisitNamedDecl(value_decl, node_desc) && res; 
+}
+
+bool ClangToDot::VisitDeclaratorDecl(clang::DeclaratorDecl * declarator_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("DeclaratorDecl");
+
+    // TODO
+
+    return VisitValueDecl(declarator_decl, node_desc) && res; 
 }
 
 bool ClangToDot::VisitFieldDecl(clang::FieldDecl * field_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
     
-    field_decl->getNameAsString();
+    node_desc.kind_hierarchy.push_back("FieldDecl");
 
     field_decl->getType();
 
     clang::Expr * init_expr = field_decl->getInClassInitializer();
 
-    return VisitDecl(field_decl, node_desc) && res; 
+    return VisitDeclaratorDecl(field_decl, node_desc) && res; 
 }
 
 bool ClangToDot::VisitFunctionDecl(clang::FunctionDecl * function_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("FunctionDecl");
 
     // TODO previous
 
@@ -209,6 +246,8 @@ bool ClangToDot::VisitFunctionDecl(clang::FunctionDecl * function_decl, ClangToD
 bool ClangToDot::VisitVarDecl(clang::VarDecl * var_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("VarDecl");
+
     var_decl->getNameAsString();
 
     var_decl->getType();
@@ -220,6 +259,8 @@ bool ClangToDot::VisitVarDecl(clang::VarDecl * var_decl, ClangToDot::NodeDescrip
 
 bool ClangToDot::VisitParmVarDecl(clang::ParmVarDecl * param_var_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("ParmVarDecl");
 
     param_var_decl->getNameAsString();
 
@@ -235,6 +276,8 @@ bool ClangToDot::VisitParmVarDecl(clang::ParmVarDecl * param_var_decl, ClangToDo
 bool  ClangToDot::VisitEnumConstantDecl(clang::EnumConstantDecl * enum_constant_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("EnumConstantDecl");
+
     enum_constant_decl->getNameAsString();
 
     enum_constant_decl->getType();
@@ -249,9 +292,14 @@ bool  ClangToDot::VisitEnumConstantDecl(clang::EnumConstantDecl * enum_constant_
 bool ClangToDot::VisitTranslationUnitDecl(clang::TranslationUnitDecl * translation_unit_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("TranslationUnitDecl");
+
     clang::DeclContext::decl_iterator it;
+    unsigned cnt = 0;
     for (it = translation_unit_decl->decls_begin(); it != translation_unit_decl->decls_end(); it++) {
-        *it;
+        std::ostringstream oss;
+        oss << "child[" << cnt++ << "]";
+        node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(*it)));
     }
 
     return VisitDecl(translation_unit_decl, node_desc) && res;

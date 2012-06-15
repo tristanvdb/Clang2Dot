@@ -9,7 +9,7 @@
 
 std::string ClangToDot::Traverse(clang::Stmt * stmt) {
     if (stmt == NULL)
-        return NULL;
+        return "";
 
     // Look for previous translation
     std::map<clang::Stmt *, std::string>::iterator it = p_stmt_translation_map.find(stmt);
@@ -17,7 +17,7 @@ std::string ClangToDot::Traverse(clang::Stmt * stmt) {
         return it->second; 
 
     // If first time, create a new entry
-    std::string node_ident = "";
+    std::string node_ident = genNextIdent();
     p_stmt_translation_map.insert(std::pair<clang::Stmt *, std::string>(stmt, node_ident));
     NodeDescriptor & node_desc = p_node_desc.insert(std::pair<std::string, NodeDescriptor>(node_ident, NodeDescriptor(node_ident))).first->second;
 
@@ -156,19 +156,25 @@ std::string ClangToDot::Traverse(clang::Stmt * stmt) {
 /********************/
 
 bool ClangToDot::VisitStmt(clang::Stmt * stmt, ClangToDot::NodeDescriptor & node_desc) {
-    // TODO
+    bool res = true;
 
-    return true;
+    node_desc.kind_hierarchy.push_back("Stmt");
+
+    return res;
 }
 
 bool ClangToDot::VisitBreakStmt(clang::BreakStmt * break_stmt, ClangToDot::NodeDescriptor & node_desc) {
-    // TODO
+    bool res = true;
 
-    return VisitStmt(break_stmt, node_desc);
+    node_desc.kind_hierarchy.push_back("BreakStmt"); 
+
+    return VisitStmt(break_stmt, node_desc) && res;
 }
 
 bool ClangToDot::VisitCompoundStmt(clang::CompoundStmt * compound_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("CompoundStmt");
 
     clang::CompoundStmt::body_iterator it;
     for (it = compound_stmt->body_begin(); it != compound_stmt->body_end(); it++) {
@@ -179,13 +185,17 @@ bool ClangToDot::VisitCompoundStmt(clang::CompoundStmt * compound_stmt, ClangToD
 }
 
 bool ClangToDot::VisitContinueStmt(clang::ContinueStmt * continue_stmt, ClangToDot::NodeDescriptor & node_desc) {
-    // TODO
+    bool res = true;
 
-    return VisitStmt(continue_stmt, node_desc);
+    node_desc.kind_hierarchy.push_back("ContinueStmt");
+
+    return VisitStmt(continue_stmt, node_desc) && res;
 }
 
 bool ClangToDot::VisitDeclStmt(clang::DeclStmt * decl_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("DeclStmt");
 
     if (decl_stmt->isSingleDecl()) {
         decl_stmt->getSingleDecl();
@@ -202,6 +212,8 @@ bool ClangToDot::VisitDeclStmt(clang::DeclStmt * decl_stmt, ClangToDot::NodeDesc
 bool ClangToDot::VisitDoStmt(clang::DoStmt * do_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("DoStmt");
+
     do_stmt->getCond();
 
     do_stmt->getBody();
@@ -210,15 +222,19 @@ bool ClangToDot::VisitDoStmt(clang::DoStmt * do_stmt, ClangToDot::NodeDescriptor
 }
 
 bool ClangToDot::VisitExpr(clang::Expr * expr, ClangToDot::NodeDescriptor & node_desc) {
-     bool res = true;
+    bool res = true;
 
-     // TODO
+    node_desc.kind_hierarchy.push_back("Expr");
 
-     return VisitStmt(expr, node_desc) && true;
+    // TODO
+
+    return VisitStmt(expr, node_desc) && res;
 }
 
 bool ClangToDot::VisitConditionalOperator(clang::ConditionalOperator * conditional_operator, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("ConditionalOperator");
 
     conditional_operator->getCond();
 
@@ -232,6 +248,8 @@ bool ClangToDot::VisitConditionalOperator(clang::ConditionalOperator * condition
 bool ClangToDot::VisitBinaryOperator(clang::BinaryOperator * binary_operator, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("BinaryOperator");
+
     binary_operator->getLHS();
 
     binary_operator->getRHS();
@@ -244,6 +262,8 @@ bool ClangToDot::VisitBinaryOperator(clang::BinaryOperator * binary_operator, Cl
 bool ClangToDot::VisitArraySubscriptExpr(clang::ArraySubscriptExpr * array_subscript_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("ArraySubscriptExpr");
+
     array_subscript_expr->getBase();
 
     array_subscript_expr->getIdx();
@@ -253,6 +273,8 @@ bool ClangToDot::VisitArraySubscriptExpr(clang::ArraySubscriptExpr * array_subsc
 
 bool ClangToDot::VisitCallExpr(clang::CallExpr * call_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("CallExpr");
 
     call_expr->getCallee();
 
@@ -267,6 +289,8 @@ bool ClangToDot::VisitCallExpr(clang::CallExpr * call_expr, ClangToDot::NodeDesc
 bool ClangToDot::VisitCastExpr(clang::CastExpr * cast, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("CastExpr");
+
     // TODO check 'name' is set
 
     cast->getSubExpr();
@@ -276,6 +300,8 @@ bool ClangToDot::VisitCastExpr(clang::CastExpr * cast, ClangToDot::NodeDescripto
 
 bool ClangToDot::VisitExplicitCastExpr(clang::ExplicitCastExpr * explicit_cast_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("ExplicitCastExpr");
 
     // TODO check 'name' is set
 
@@ -287,6 +313,8 @@ bool ClangToDot::VisitExplicitCastExpr(clang::ExplicitCastExpr * explicit_cast_e
 bool ClangToDot::VisitCStyleCastExpr(clang::CStyleCastExpr * c_style_cast, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("CStyleCastExpr");
+
     // TODO
 
     return VisitCastExpr(c_style_cast, node_desc) && res;
@@ -294,6 +322,8 @@ bool ClangToDot::VisitCStyleCastExpr(clang::CStyleCastExpr * c_style_cast, Clang
 
 bool ClangToDot::VisitImplicitCastExpr(clang::ImplicitCastExpr * implicit_cast_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("ImplicitCastExpr");
 
     // TODO
 
@@ -303,6 +333,8 @@ bool ClangToDot::VisitImplicitCastExpr(clang::ImplicitCastExpr * implicit_cast_e
 bool ClangToDot::VisitCharacterLiteral(clang::CharacterLiteral * character_literal, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("CharacterLiteral");
+
     character_literal->getValue();
 
     return VisitExpr(character_literal, node_desc) && res;
@@ -310,6 +342,8 @@ bool ClangToDot::VisitCharacterLiteral(clang::CharacterLiteral * character_liter
 
 bool ClangToDot::VisitCompoundLiteralExpr(clang::CompoundLiteralExpr * compound_literal, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("CompoundLiteralExpr");
 
     compound_literal->getInitializer();
 
@@ -321,6 +355,8 @@ bool ClangToDot::VisitCompoundLiteralExpr(clang::CompoundLiteralExpr * compound_
 bool ClangToDot::VisitDeclRefExpr(clang::DeclRefExpr * decl_ref_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("DeclRefExpr");
+
     decl_ref_expr->getDecl();
 
     return VisitExpr(decl_ref_expr, node_desc) && res;
@@ -328,6 +364,8 @@ bool ClangToDot::VisitDeclRefExpr(clang::DeclRefExpr * decl_ref_expr, ClangToDot
 
 bool ClangToDot::VisitDesignatedInitExpr(clang::DesignatedInitExpr * designated_init_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("DesignatedInitExpr");
 
     designated_init_expr->getInit();
 
@@ -351,6 +389,8 @@ bool ClangToDot::VisitDesignatedInitExpr(clang::DesignatedInitExpr * designated_
 bool ClangToDot::VisitExtVectorElementExpr(clang::ExtVectorElementExpr * ext_vector_element_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("ExtVectorElementExpr");
+
     ext_vector_element_expr->getBase();
 
     ext_vector_element_expr->getType();
@@ -371,6 +411,8 @@ bool ClangToDot::VisitExtVectorElementExpr(clang::ExtVectorElementExpr * ext_vec
 bool ClangToDot::VisitFloatingLiteral(clang::FloatingLiteral * floating_literal, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("FloatingLiteral");
+
     // FIXME
 
     unsigned int precision =  llvm::APFloat::semanticsPrecision(floating_literal->getValue().getSemantics());
@@ -387,6 +429,8 @@ bool ClangToDot::VisitFloatingLiteral(clang::FloatingLiteral * floating_literal,
 bool ClangToDot::VisitImaginaryLiteral(clang::ImaginaryLiteral * imaginary_literal, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("ImaginaryLiteral");
+
     imaginary_literal->getSubExpr();
 
     return VisitExpr(imaginary_literal, node_desc) && res;
@@ -394,6 +438,8 @@ bool ClangToDot::VisitImaginaryLiteral(clang::ImaginaryLiteral * imaginary_liter
 
 bool ClangToDot::VisitInitListExpr(clang::InitListExpr * init_list_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("InitListExpr");
 
     init_list_expr->getSyntacticForm();
 
@@ -408,6 +454,8 @@ bool ClangToDot::VisitInitListExpr(clang::InitListExpr * init_list_expr, ClangTo
 bool ClangToDot::VisitIntegerLiteral(clang::IntegerLiteral * integer_literal, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("IntegerLiteral");
+
     integer_literal->getValue();
 
     return VisitExpr(integer_literal, node_desc) && res;
@@ -415,6 +463,8 @@ bool ClangToDot::VisitIntegerLiteral(clang::IntegerLiteral * integer_literal, Cl
 
 bool ClangToDot::VisitMemberExpr(clang::MemberExpr * member_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("MemberExpr");
 
     member_expr->getBase();
 
@@ -429,6 +479,8 @@ bool ClangToDot::VisitMemberExpr(clang::MemberExpr * member_expr, ClangToDot::No
 bool ClangToDot::VisitParenExpr(clang::ParenExpr * paren_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("ParentExpr");
+
     paren_expr->getSubExpr();
 
     return VisitExpr(paren_expr, node_desc) && res;
@@ -436,6 +488,8 @@ bool ClangToDot::VisitParenExpr(clang::ParenExpr * paren_expr, ClangToDot::NodeD
 
 bool ClangToDot::VisitPredefinedExpr(clang::PredefinedExpr * predefined_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("PredefinedExpr");
 
     switch (predefined_expr->getIdentType()) {
         case clang::PredefinedExpr::Func:
@@ -458,6 +512,8 @@ bool ClangToDot::VisitPredefinedExpr(clang::PredefinedExpr * predefined_expr, Cl
 bool ClangToDot::VisitStmtExpr(clang::StmtExpr * stmt_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("StmtExpr");
+
     stmt_expr->getSubStmt();
 
     return VisitExpr(stmt_expr, node_desc) && res;
@@ -466,6 +522,8 @@ bool ClangToDot::VisitStmtExpr(clang::StmtExpr * stmt_expr, ClangToDot::NodeDesc
 bool ClangToDot::VisitStringLiteral(clang::StringLiteral * string_literal, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("StringLiteral");
+
     string_literal->getString();
 
     return VisitExpr(string_literal, node_desc) && res;
@@ -473,6 +531,8 @@ bool ClangToDot::VisitStringLiteral(clang::StringLiteral * string_literal, Clang
 
 bool ClangToDot::VisitUnaryExprOrTypeTraitExpr(clang::UnaryExprOrTypeTraitExpr * unary_expr_or_type_trait_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("UnaryExprOrTypeTraitExpr");
 
     if (unary_expr_or_type_trait_expr->isArgumentType()) {
         unary_expr_or_type_trait_expr->getArgumentType();
@@ -495,6 +555,8 @@ bool ClangToDot::VisitUnaryExprOrTypeTraitExpr(clang::UnaryExprOrTypeTraitExpr *
 
 bool ClangToDot::VisitUnaryOperator(clang::UnaryOperator * unary_operator, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("UnaryOperator");
 
     unary_operator->getSubExpr();
 
@@ -533,6 +595,8 @@ bool ClangToDot::VisitUnaryOperator(clang::UnaryOperator * unary_operator, Clang
 bool ClangToDot::VisitVAArgExpr(clang::VAArgExpr * va_arg_expr, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("VAArgExpr");
+
     va_arg_expr->getSubExpr();
 
     return VisitExpr(va_arg_expr, node_desc) && res;
@@ -540,6 +604,8 @@ bool ClangToDot::VisitVAArgExpr(clang::VAArgExpr * va_arg_expr, ClangToDot::Node
 
 bool ClangToDot::VisitForStmt(clang::ForStmt * for_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("ForStmt");
 
     for_stmt->getInit();
 
@@ -555,6 +621,8 @@ bool ClangToDot::VisitForStmt(clang::ForStmt * for_stmt, ClangToDot::NodeDescrip
 bool ClangToDot::VisitGotoStmt(clang::GotoStmt * goto_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("GotoStmt");
+
     goto_stmt->getLabel()->getStmt();
 
     return VisitStmt(goto_stmt, node_desc) && res;
@@ -562,6 +630,8 @@ bool ClangToDot::VisitGotoStmt(clang::GotoStmt * goto_stmt, ClangToDot::NodeDesc
 
 bool ClangToDot::VisitIfStmt(clang::IfStmt * if_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("IfStmt");
 
     if_stmt->getCond();
 
@@ -575,6 +645,8 @@ bool ClangToDot::VisitIfStmt(clang::IfStmt * if_stmt, ClangToDot::NodeDescriptor
 bool ClangToDot::VisitLabelStmt(clang::LabelStmt * label_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("LabelStmt");
+
     label_stmt->getName();
 
     label_stmt->getSubStmt();
@@ -585,6 +657,8 @@ bool ClangToDot::VisitLabelStmt(clang::LabelStmt * label_stmt, ClangToDot::NodeD
 bool ClangToDot::VisitNullStmt(clang::NullStmt * null_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("NullStmt");
+
     // TODO
 
     return VisitStmt(null_stmt, node_desc) && res;
@@ -592,6 +666,8 @@ bool ClangToDot::VisitNullStmt(clang::NullStmt * null_stmt, ClangToDot::NodeDesc
 
 bool ClangToDot::VisitReturnStmt(clang::ReturnStmt * return_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("ReturnStmt");
 
     return_stmt->getRetValue();
 
@@ -601,6 +677,8 @@ bool ClangToDot::VisitReturnStmt(clang::ReturnStmt * return_stmt, ClangToDot::No
 bool ClangToDot::VisitSwitchCase(clang::SwitchCase * switch_case, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("SwitchCase");
+
     switch_case->getSubStmt();
 
     return VisitStmt(switch_case, node_desc) && res;
@@ -608,6 +686,8 @@ bool ClangToDot::VisitSwitchCase(clang::SwitchCase * switch_case, ClangToDot::No
 
 bool ClangToDot::VisitCaseStmt(clang::CaseStmt * case_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("CaseStmt");
 
     case_stmt->getLHS();
 
@@ -619,6 +699,8 @@ bool ClangToDot::VisitCaseStmt(clang::CaseStmt * case_stmt, ClangToDot::NodeDesc
 bool ClangToDot::VisitDefaultStmt(clang::DefaultStmt * default_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;    
 
+    node_desc.kind_hierarchy.push_back("DefaultStmt");
+
     // TODO
 
     return VisitSwitchCase(default_stmt, node_desc) && res;
@@ -626,6 +708,8 @@ bool ClangToDot::VisitDefaultStmt(clang::DefaultStmt * default_stmt, ClangToDot:
 
 bool ClangToDot::VisitSwitchStmt(clang::SwitchStmt * switch_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("SwitchStmt");
 
     switch_stmt->getCond();
     
@@ -637,9 +721,12 @@ bool ClangToDot::VisitSwitchStmt(clang::SwitchStmt * switch_stmt, ClangToDot::No
 bool ClangToDot::VisitWhileStmt(clang::WhileStmt * while_stmt, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("WhileStmt");
+
     while_stmt->getCond();
 
     while_stmt->getBody();
 
     return VisitStmt(while_stmt, node_desc) && res;
 }
+

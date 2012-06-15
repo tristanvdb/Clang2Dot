@@ -2,6 +2,8 @@
 #include "clang-to-dot.hpp"
 
 #include <iostream>
+#include <sstream>
+#include <string>
 
 void clang2dot(
     std::vector<std::string> inc_dirs_list,
@@ -146,10 +148,17 @@ ClangToDot::ClangToDot(clang::CompilerInstance * compiler_instance, Language lan
     p_stmt_translation_map(),
     p_type_translation_map(),
     p_node_desc(),
-    language(language_)
+    language(language_),
+    ident_cnt(0)
 {}
 
 ClangToDot::~ClangToDot() {}
+
+std::string ClangToDot::genNextIdent() {
+    std::ostringstream oss;
+    oss << "ident" << ident_cnt++;
+    return oss.str();
+}
 
 /* Printer method: output GraphViz format */
 
@@ -178,7 +187,32 @@ ClangToDot::NodeDescriptor::NodeDescriptor(std::string ident_) :
     attributes()
 {}
 
+/*
+std::string ident;
+std::vector<std::string> kind_hierarchy;
+std::vector<std::pair<std::string, std::string> > successors;
+std::vector<std::pair<std::string, std::string> > attributes;
+*/
+
 void ClangToDot::NodeDescriptor::toDot(std::ostream & out) const {
-    // TODO
+    std::vector<std::string>::const_iterator str_it;
+    std::vector<std::pair<std::string, std::string> >::const_iterator pair_str_it;
+
+    out << "\t" << ident << "[";
+        out << "label=\"";
+            out << kind_hierarchy.front() << "\\n";
+            for (str_it = kind_hierarchy.begin() + 1; str_it != kind_hierarchy.end(); str_it++)
+                out << "::" << *str_it;
+            out << "\\n\\n";
+            for (pair_str_it = attributes.begin(); pair_str_it != attributes.end(); pair_str_it++)
+                out << pair_str_it->first << " : " << pair_str_it->second << "\\n";
+        out << "\"";
+        // TODO color from node type (NIY)
+    out << "];" << std::endl;
+    for (pair_str_it = successors.begin(); pair_str_it != successors.end(); pair_str_it++) {
+        if (pair_str_it->second != "")
+            out << "\t\t" << ident << " -> " << pair_str_it->second << "[label=\"" << pair_str_it->first << "\"];" << std::endl;
+    }
+    out << std::endl;
 }
 

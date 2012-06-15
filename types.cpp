@@ -9,7 +9,7 @@
 
 std::string ClangToDot::Traverse(const clang::Type * type) {
     if (type == NULL)
-        return NULL;
+        return "";
 
     // Look for previous translation
     std::map<const clang::Type *, std::string>::iterator it = p_type_translation_map.find(type);
@@ -17,7 +17,7 @@ std::string ClangToDot::Traverse(const clang::Type * type) {
          return it->second;
 
     // If first time, create a new entry
-    std::string node_ident = "";
+    std::string node_ident = genNextIdent();
     p_type_translation_map.insert(std::pair<const clang::Type *, std::string>(type, node_ident));
     NodeDescriptor & node_desc = p_node_desc.insert(std::pair<std::string, NodeDescriptor>(node_ident, NodeDescriptor(node_ident))).first->second;
 
@@ -82,11 +82,15 @@ std::string ClangToDot::Traverse(const clang::Type * type) {
 bool ClangToDot::VisitType(clang::Type * type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("Type");
+
     return res;
 }
 
 bool ClangToDot::VisitArrayType(clang::ArrayType * array_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("ArrayType");
 
     array_type->getElementType();
 
@@ -96,6 +100,8 @@ bool ClangToDot::VisitArrayType(clang::ArrayType * array_type, ClangToDot::NodeD
 bool ClangToDot::VisitConstantArrayType(clang::ConstantArrayType * constant_array_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("ConstantArrayType");
+
     constant_array_type->getSize();
 
     return VisitArrayType(constant_array_type, node_desc) && res;
@@ -104,11 +110,15 @@ bool ClangToDot::VisitConstantArrayType(clang::ConstantArrayType * constant_arra
 bool ClangToDot::VisitIncompleteArrayType(clang::IncompleteArrayType * incomplete_array_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("IncompleteArrayType");
+
     return VisitArrayType(incomplete_array_type, node_desc) && res;
 }
 
 bool ClangToDot::VisitAttributedType(clang::AttributedType * attributed_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("AttributedType");
 
     attributed_type->getModifiedType();
 
@@ -148,6 +158,8 @@ bool ClangToDot::VisitAttributedType(clang::AttributedType * attributed_type, Cl
 
 bool ClangToDot::VisitBuiltinType(clang::BuiltinType * builtin_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("BuiltinType");
 
     switch (builtin_type->getKind()) {
         case clang::BuiltinType::Void:
@@ -220,6 +232,8 @@ bool ClangToDot::VisitBuiltinType(clang::BuiltinType * builtin_type, ClangToDot:
 bool ClangToDot::VisitComplexType(clang::ComplexType * complex_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("ComplexType");
+
     complex_type->getElementType();
 
     return VisitType(complex_type, node_desc) && res;
@@ -227,6 +241,8 @@ bool ClangToDot::VisitComplexType(clang::ComplexType * complex_type, ClangToDot:
 
 bool ClangToDot::VisitFunctionType(clang::FunctionType * function_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("FunctionType");
 
     function_type->getResultType();
 
@@ -236,11 +252,15 @@ bool ClangToDot::VisitFunctionType(clang::FunctionType * function_type, ClangToD
 bool ClangToDot::VisitFunctionNoProtoType(clang::FunctionNoProtoType * function_no_proto_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("FunctionNoProtoType");
+
     return VisitFunctionType(function_no_proto_type, node_desc) && res;
 }
 
 bool ClangToDot::VisitFunctionProtoType(clang::FunctionProtoType * function_proto_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("FunctionProtoType");
 
     for (unsigned i = 0; i < function_proto_type->getNumArgs(); i++) {
         function_proto_type->getArgType(i);
@@ -254,6 +274,8 @@ bool ClangToDot::VisitFunctionProtoType(clang::FunctionProtoType * function_prot
 bool ClangToDot::VisitParenType(clang::ParenType * paren_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("ParenType");
+
     paren_type->getInnerType();
 
     return VisitType(paren_type, node_desc) && res;
@@ -261,6 +283,8 @@ bool ClangToDot::VisitParenType(clang::ParenType * paren_type, ClangToDot::NodeD
 
 bool ClangToDot::VisitPointerType(clang::PointerType * pointer_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("PointerType");
 
     pointer_type->getPointeeType();
 
@@ -270,6 +294,8 @@ bool ClangToDot::VisitPointerType(clang::PointerType * pointer_type, ClangToDot:
 bool ClangToDot::VisitTagType(clang::TagType * tag_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("TagType");
+
     tag_type->getDecl();
 
     return VisitType(tag_type, node_desc) && res;
@@ -278,17 +304,23 @@ bool ClangToDot::VisitTagType(clang::TagType * tag_type, ClangToDot::NodeDescrip
 bool ClangToDot::VisitEnumType(clang::EnumType * enum_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("EnumType");
+
     return VisitTagType(enum_type, node_desc) && res;
 }
 
 bool ClangToDot::VisitRecordType(clang::RecordType * record_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("RecordType");
+
     return VisitTagType(record_type, node_desc) && res;
 }
 
 bool ClangToDot::VisitTypedefType(clang::TypedefType * typedef_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("TypedefType");
 
     typedef_type->getDecl();
 
@@ -298,6 +330,8 @@ bool ClangToDot::VisitTypedefType(clang::TypedefType * typedef_type, ClangToDot:
 bool ClangToDot::VisitElaboratedType(clang::ElaboratedType * elaborated_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
+    node_desc.kind_hierarchy.push_back("ElaboratedType");
+
     elaborated_type->getNamedType();
 
     return VisitType(elaborated_type, node_desc) && res;
@@ -305,6 +339,8 @@ bool ClangToDot::VisitElaboratedType(clang::ElaboratedType * elaborated_type, Cl
 
 bool ClangToDot::VisitVectorType(clang::VectorType * vector_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("VectorType");
 
     vector_type->getElementType();
 
@@ -315,6 +351,8 @@ bool ClangToDot::VisitVectorType(clang::VectorType * vector_type, ClangToDot::No
 
 bool ClangToDot::VisitExtVectorType(clang::ExtVectorType * ext_vector_type, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
+
+    node_desc.kind_hierarchy.push_back("ExtVectorType");
 
     return VisitVectorType(ext_vector_type, node_desc) && res;
 }
