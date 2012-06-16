@@ -2,6 +2,9 @@
 Clang2Dot
 =========
 
+If you are looking for a tutorial: https://github.com/loarabia/Clang-tutorial/
+contains all the basics.
+
 I am working with Clang, basically transforming Clang AST to another (Sage III
 from ROSE Compiler).
 
