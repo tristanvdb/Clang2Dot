@@ -74,6 +74,35 @@ std::string ClangToDot::Traverse(clang::Decl * decl) {
 bool ClangToDot::VisitDecl(clang::Decl * decl, ClangToDot::NodeDescriptor & node_desc) {
     node_desc.kind_hierarchy.push_back("Decl");
 
+    switch (decl->getAccess()) {
+        case clang::AS_public:
+            node_desc.attributes.push_back(std::pair<std::string, std::string>("access_specifier", "public"));
+            break;
+        case clang::AS_protected:
+            node_desc.attributes.push_back(std::pair<std::string, std::string>("access_specifier", "protected"));
+            break;
+        case clang::AS_private:
+            node_desc.attributes.push_back(std::pair<std::string, std::string>("access_specifier", "private`"));
+            break;
+        case clang::AS_none:
+            break;
+    }
+
+    clang::Decl::attr_iterator it;
+    unsigned cnt = 0;
+    for (it = decl->attr_begin(); it != decl->attr_end(); it++) {
+        std::ostringstream oss;
+        oss << "attribute[" << cnt++ << "]";
+        switch ((*it)->getKind()) {
+#define ATTR(X)            case clang::attr::X: \
+                node_desc.attributes.push_back(std::pair<std::string, std::string>(oss.str(), "X")); \
+                break;
+#include "clang/Basic/AttrList.inc"
+        }
+    }
+
+    node_desc.successors.push_back(std::pair<std::string, std::string>("canonical_decl", Traverse(decl->getCanonicalDecl())));
+
     return true;
 }
 
@@ -84,6 +113,34 @@ bool ClangToDot::VisitNamedDecl(clang::NamedDecl * named_decl, ClangToDot::NodeD
 
     node_desc.attributes.push_back(std::pair<std::string, std::string>("name", named_decl->getNameAsString()));
 
+    switch (named_decl->getLinkage()) {
+        case clang::NoLinkage:
+            break;
+        case clang::InternalLinkage:
+            node_desc.attributes.push_back(std::pair<std::string, std::string>("linkage", "internal"));
+            break;
+        case clang::UniqueExternalLinkage:
+            node_desc.attributes.push_back(std::pair<std::string, std::string>("linkage", "unique external"));
+            break;
+        case clang::ExternalLinkage:
+            node_desc.attributes.push_back(std::pair<std::string, std::string>("linkage", "external"));
+            break;
+    }
+
+    switch (named_decl->getVisibility()) {
+        case clang::HiddenVisibility:
+            node_desc.attributes.push_back(std::pair<std::string, std::string>("visibility", "hidden"));
+            break;
+        case clang::ProtectedVisibility:
+            node_desc.attributes.push_back(std::pair<std::string, std::string>("visibility", "protected"));
+            break;
+        case clang::DefaultVisibility:
+            node_desc.attributes.push_back(std::pair<std::string, std::string>("visibility", "default"));
+            break;
+    }
+
+    node_desc.successors.push_back(std::pair<std::string, std::string>("underlying_decl", Traverse(named_decl->getUnderlyingDecl())));
+
     return VisitDecl(named_decl, node_desc) && res;
 }
 
@@ -92,7 +149,7 @@ bool ClangToDot::VisitTypeDecl(clang::TypeDecl * type_decl, ClangToDot::NodeDesc
 
     node_desc.kind_hierarchy.push_back("TypeDecl");
 
-    // TODO
+    node_desc.successors.push_back(std::pair<std::string, std::string>("type_for_decl", Traverse(type_decl->getTypeForDecl())));
 
     return VisitNamedDecl(type_decl, node_desc) && res;
 }
@@ -102,7 +159,15 @@ bool ClangToDot::VisitTagDecl(clang::TagDecl * tag_decl, ClangToDot::NodeDescrip
 
     node_desc.kind_hierarchy.push_back("TagDecl");
 
+    node_desc.successors.push_back(std::pair<std::string, std::string>("canonical_decl", Traverse(tag_decl->getCanonicalDecl())));
+
+    node_desc.successors.push_back(std::pair<std::string, std::string>("definition", Traverse(tag_decl->getDefinition())));
+
     node_desc.attributes.push_back(std::pair<std::string, std::string>("kind", tag_decl->getKindName()));
+
+    node_desc.successors.push_back(std::pair<std::string, std::string>("typedef_name_for_anon_decl", Traverse(tag_decl->getTypedefNameForAnonDecl())));
+
+    // TODO NestedNameSpecifier * getQualifier () const 
 
     return VisitTypeDecl(tag_decl, node_desc) && res;
 }
@@ -131,31 +196,72 @@ bool ClangToDot::VisitCXXRecordDecl(clang::CXXRecordDecl * cxx_record_decl, Clan
     node_desc.kind_hierarchy.push_back("CXXRecordDecl");
 
     clang::CXXRecordDecl::base_class_iterator it_base;
+    unsigned cnt = 0;
     for (it_base = cxx_record_decl->bases_begin(); it_base !=  cxx_record_decl->bases_end(); it_base++) {
-        // TODO
+        std::ostringstream oss;
+        oss << "base_type[" << cnt++ << "]";
+        switch (it_base->getAccessSpecifier()) {
+            case clang::AS_public:
+                oss << " (public)";
+                break;
+            case clang::AS_protected:
+                oss << " (protected)";
+                break;
+            case clang::AS_private:
+                oss << " (private)";
+                break;
+            case clang::AS_none:
+                break;
+        }
+        node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(it_base->getType().getTypePtr())));
     }
 
     clang::CXXRecordDecl::base_class_iterator it_vbase;
+    cnt = 0;
     for (it_vbase = cxx_record_decl->vbases_begin(); it_vbase !=  cxx_record_decl->vbases_end(); it_vbase++) {
-        // TODO
+        std::ostringstream oss;
+        oss << "virtual_base_type[" << cnt++ << "]";
+        switch (it_base->getAccessSpecifier()) {
+            case clang::AS_public:
+                oss << " (public)";
+                break;
+            case clang::AS_protected:
+                oss << " (protected)";
+                break;
+            case clang::AS_private:
+                oss << " (private)";
+                break;
+            case clang::AS_none:
+                break;
+        }
+        node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(it_vbase->getType().getTypePtr())));
     }
 
     clang::CXXRecordDecl::method_iterator it_method;
+    cnt = 0;
     for (it_method = cxx_record_decl->method_begin(); it_method !=  cxx_record_decl->method_end(); it_method++) {
-        // TODO
+        std::ostringstream oss;
+        oss << "method[" << cnt++ << "]";
+        node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(*it_method)));
     }
 
     clang::CXXRecordDecl::ctor_iterator it_ctor;
+    cnt = 0;
     for (it_ctor = cxx_record_decl->ctor_begin(); it_ctor != cxx_record_decl->ctor_end(); it_ctor++) {
-        // TODO if not tranversed as methods
+        std::ostringstream oss;
+        oss << "constructor[" << cnt++ << "]";
+        node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(*it_ctor)));
     }
 
     clang::CXXRecordDecl::friend_iterator it_friend;
+    cnt = 0;
     for (it_friend = cxx_record_decl->friend_begin(); it_friend != cxx_record_decl->friend_end(); it_friend++) {
-        // TODO
+        std::ostringstream oss;
+        oss << "friend[" << cnt++ << "]";
+        node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(*it_friend)));
     }
 
-    clang::CXXDestructorDecl * destructor = cxx_record_decl->getDestructor();
+    node_desc.successors.push_back(std::pair<std::string, std::string>("destructor", Traverse(cxx_record_decl->getDestructor())));
 
     return VisitRecordDecl(cxx_record_decl, node_desc) && res;
 }
@@ -165,16 +271,29 @@ bool ClangToDot::VisitEnumDecl(clang::EnumDecl * enum_decl, ClangToDot::NodeDesc
 
     node_desc.kind_hierarchy.push_back("EnumDecl");
 
-    enum_decl->getNameAsString();
-
-    clang::EnumDecl * prev_enum_decl = enum_decl->getPreviousDeclaration();
+    node_desc.successors.push_back(std::pair<std::string, std::string>("previous_declaration", Traverse(enum_decl->getPreviousDeclaration())));
 
     clang::EnumDecl::enumerator_iterator it;
+    unsigned cnt = 0;
     for (it = enum_decl->enumerator_begin(); it != enum_decl->enumerator_end(); it++) {
-        // TODO
+        std::ostringstream oss;
+        oss << "enumerator[" << cnt++ << "]";
+        node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(*it)));
     }
 
+    node_desc.successors.push_back(std::pair<std::string, std::string>("promotion_type", Traverse(enum_decl->getPromotionType().getTypePtr())));
+
     return VisitTagDecl(enum_decl, node_desc) && res;
+}
+
+bool ClangToDot::VisitTypedefNameDecl(clang::TypedefNameDecl * typedef_name_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("TypedefNameDecl");
+
+    node_desc.successors.push_back(std::pair<std::string, std::string>("underlying_type", Traverse(typedef_name_decl->getUnderlyingType().getTypePtr())));
+
+    return VisitTypeDecl(typedef_name_decl, node_desc) && res;
 }
 
 bool ClangToDot::VisitTypedefDecl(clang::TypedefDecl * typedef_decl, ClangToDot::NodeDescriptor & node_desc) {
@@ -182,11 +301,7 @@ bool ClangToDot::VisitTypedefDecl(clang::TypedefDecl * typedef_decl, ClangToDot:
 
     node_desc.kind_hierarchy.push_back("TypedefDecl");
 
-    node_desc.attributes.push_back(std::pair<std::string, std::string>("name", typedef_decl->getNameAsString()));
-
-    node_desc.successors.push_back(std::pair<std::string, std::string>("underlying_type", Traverse(typedef_decl->getUnderlyingType().getTypePtr())));
-
-    return VisitDecl(typedef_decl, node_desc) && res;
+    return VisitTypedefNameDecl(typedef_decl, node_desc) && res;
 }
 
 bool ClangToDot::VisitValueDecl(clang::ValueDecl * value_decl, ClangToDot::NodeDescriptor & node_desc) {
@@ -194,7 +309,7 @@ bool ClangToDot::VisitValueDecl(clang::ValueDecl * value_decl, ClangToDot::NodeD
 
     node_desc.kind_hierarchy.push_back("ValueDecl");
 
-    value_decl->getType();
+     node_desc.successors.push_back(std::pair<std::string, std::string>("type", Traverse(value_decl->getType().getTypePtr())));
 
     return VisitNamedDecl(value_decl, node_desc) && res; 
 }
@@ -204,8 +319,6 @@ bool ClangToDot::VisitDeclaratorDecl(clang::DeclaratorDecl * declarator_decl, Cl
 
     node_desc.kind_hierarchy.push_back("DeclaratorDecl");
 
-    // TODO
-
     return VisitValueDecl(declarator_decl, node_desc) && res; 
 }
 
@@ -214,9 +327,11 @@ bool ClangToDot::VisitFieldDecl(clang::FieldDecl * field_decl, ClangToDot::NodeD
     
     node_desc.kind_hierarchy.push_back("FieldDecl");
 
-    field_decl->getType();
+    node_desc.successors.push_back(std::pair<std::string, std::string>("in_class_initializer", Traverse(field_decl->getInClassInitializer())));
 
-    clang::Expr * init_expr = field_decl->getInClassInitializer();
+    node_desc.successors.push_back(std::pair<std::string, std::string>("bit_width", Traverse(field_decl->getBitWidth())));
+
+    node_desc.successors.push_back(std::pair<std::string, std::string>("parent", Traverse(field_decl->getParent())));
 
     return VisitDeclaratorDecl(field_decl, node_desc) && res; 
 }
@@ -226,21 +341,19 @@ bool ClangToDot::VisitFunctionDecl(clang::FunctionDecl * function_decl, ClangToD
 
     node_desc.kind_hierarchy.push_back("FunctionDecl");
 
-    // TODO previous
+    node_desc.successors.push_back(std::pair<std::string, std::string>("previous_declaration", Traverse(function_decl->getPreviousDeclaration())));
 
-    function_decl->getNameAsString();
-
-    function_decl->getResultType();
+    node_desc.successors.push_back(std::pair<std::string, std::string>("result_type", Traverse(function_decl->getResultType().getTypePtr())));
 
     for (unsigned i = 0; i < function_decl->getNumParams(); i++) {
-        function_decl->getParamDecl(i);
+        std::ostringstream oss;
+        oss << "parameter[" << i << "]";
+        node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(function_decl->getParamDecl(i))));
     }
 
-    if (function_decl->isThisDeclarationADefinition()) {
-        function_decl->getBody();
-    }
+    node_desc.successors.push_back(std::pair<std::string, std::string>("body", Traverse(function_decl->getBody())));
 
-    return VisitDecl(function_decl, node_desc) && res;
+    return VisitDeclaratorDecl(function_decl, node_desc) && res;
 }
 
 bool ClangToDot::VisitVarDecl(clang::VarDecl * var_decl, ClangToDot::NodeDescriptor & node_desc) {
@@ -248,13 +361,15 @@ bool ClangToDot::VisitVarDecl(clang::VarDecl * var_decl, ClangToDot::NodeDescrip
 
     node_desc.kind_hierarchy.push_back("VarDecl");
 
-    var_decl->getNameAsString();
+    node_desc.successors.push_back(std::pair<std::string, std::string>("acting_definition", Traverse(var_decl->getActingDefinition())));
 
-    var_decl->getType();
+    node_desc.successors.push_back(std::pair<std::string, std::string>("definition", Traverse(var_decl->getDefinition())));
 
-    clang::Expr * init_expr = var_decl->getInit();
+    node_desc.successors.push_back(std::pair<std::string, std::string>("out_of_line_definition", Traverse(var_decl->getOutOfLineDefinition())));
 
-    return VisitDecl(var_decl, node_desc) && res;
+    node_desc.successors.push_back(std::pair<std::string, std::string>("init", Traverse(var_decl->getInit())));
+
+    return VisitDeclaratorDecl(var_decl, node_desc) && res;
 }
 
 bool ClangToDot::VisitParmVarDecl(clang::ParmVarDecl * param_var_decl, ClangToDot::NodeDescriptor & node_desc) {
@@ -262,13 +377,9 @@ bool ClangToDot::VisitParmVarDecl(clang::ParmVarDecl * param_var_decl, ClangToDo
 
     node_desc.kind_hierarchy.push_back("ParmVarDecl");
 
-    param_var_decl->getNameAsString();
+    node_desc.successors.push_back(std::pair<std::string, std::string>("original_type", Traverse(param_var_decl->getOriginalType().getTypePtr())));
 
-    param_var_decl->getOriginalType();
-
-    if (param_var_decl->hasDefaultArg()) {
-        param_var_decl->getDefaultArg();
-    }
+    node_desc.successors.push_back(std::pair<std::string, std::string>("default_arg", Traverse(param_var_decl->getDefaultArg())));
 
     return VisitDecl(param_var_decl, node_desc) && res;
 }
@@ -278,15 +389,9 @@ bool  ClangToDot::VisitEnumConstantDecl(clang::EnumConstantDecl * enum_constant_
 
     node_desc.kind_hierarchy.push_back("EnumConstantDecl");
 
-    enum_constant_decl->getNameAsString();
+    node_desc.successors.push_back(std::pair<std::string, std::string>("init_expr", Traverse(enum_constant_decl->getInitExpr())));
 
-    enum_constant_decl->getType();
-
-    if (enum_constant_decl->getInitExpr() != NULL) {
-        enum_constant_decl->getInitExpr();
-    }
-
-    return VisitDecl(enum_constant_decl, node_desc) && res;
+    return VisitValueDecl(enum_constant_decl, node_desc) && res;
 }
 
 bool ClangToDot::VisitTranslationUnitDecl(clang::TranslationUnitDecl * translation_unit_decl, ClangToDot::NodeDescriptor & node_desc) {

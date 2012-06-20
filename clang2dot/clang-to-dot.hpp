@@ -162,7 +162,7 @@ class ClangToDot : public clang::ASTConsumer {
     //                              virtual bool VisitClassTemplatePartialSpecializationDecl(clang::ClassTemplatePartialSpecializationDecl * class_tpl_part_spec_decl, ClangToDot::NodeDescriptor & node_desc);
                         virtual bool VisitEnumDecl(clang::EnumDecl * enum_decl, ClangToDot::NodeDescriptor & node_desc); 
     //              virtual bool VisitTemplateTypeParmDecl(clang::TemplateTypeParmDecl * template_type_parm_decl, ClangToDot::NodeDescriptor & node_desc);
-    //              virtual bool VisitTypedefNameDecl(clang::TypedefNameDecl * typedef_name_decl, ClangToDot::NodeDescriptor & node_desc);
+                    virtual bool VisitTypedefNameDecl(clang::TypedefNameDecl * typedef_name_decl, ClangToDot::NodeDescriptor & node_desc);
                         virtual bool VisitTypedefDecl(clang::TypedefDecl * typedef_decl, ClangToDot::NodeDescriptor & node_desc);
     //                  virtual bool VisitTypeAliasDecl(clang::TypeAliasDecl * type_alias_decl, ClangToDot::NodeDescriptor & node_desc);
                 virtual bool VisitValueDecl(clang::ValueDecl * value_decl, ClangToDot::NodeDescriptor & node_desc);
@@ -305,9 +305,9 @@ class ClangToDot : public clang::ASTConsumer {
                 virtual bool VisitType(clang::Type * type, NodeDescriptor & node_desc);
                     virtual bool VisitArrayType(clang::ArrayType * array_type, NodeDescriptor & node_desc);
                         virtual bool VisitConstantArrayType(clang::ConstantArrayType * constant_array_type, NodeDescriptor & node_desc);
-            //          virtual bool VisitDependentSizedArrayType(clang::DependentSizedArrayType * dependent_sized_array_type, NodeDescriptor & node_desc);
+                        virtual bool VisitDependentSizedArrayType(clang::DependentSizedArrayType * dependent_sized_array_type, NodeDescriptor & node_desc);
                         virtual bool VisitIncompleteArrayType(clang::IncompleteArrayType * incomplete_array_type, NodeDescriptor & node_desc);
-            //          virtual bool VisitVariableArrayType(clang::VariableArrayType * variable_array_type, NodeDescriptor & node_desc);
+                        virtual bool VisitVariableArrayType(clang::VariableArrayType * variable_array_type, NodeDescriptor & node_desc);
                     virtual bool VisitAttributedType(clang::AttributedType * attributed_type, NodeDescriptor & node_desc);
             //      virtual bool VisitAutoType(clang::AutoType * auto_type, NodeDescriptor & node_desc);
             //      virtual bool VisitBlockPointerType(clang::BlockPointerType * block_pointer_type, NodeDescriptor & node_desc);
@@ -343,9 +343,9 @@ class ClangToDot : public clang::ASTConsumer {
             //      virtual bool VisitTypeOfExprType(clang::TypeOfExprType * type_of_expr_type, NodeDescriptor & node_desc);
             //          virtual bool VisitDependentTypeOfExprType(clang::DependentTypeOfExprType * dependent_type_of_expr_type, NodeDescriptor & node_desc);
             //      virtual bool VisitTypeOfType(clang::TypeOfType * type_of_type, NodeDescriptor & node_desc);
-            //      virtual bool VisitTypeWithKeyword(clang::TypeWithKeyword * type_with_keyword);
-            //          virtual bool VisitDependentNameType(clang::DependentNameType * dependent_name_type, NodeDescriptor & node_desc);
-            //          virtual bool VisitDependentTemplateSpecializationType(clang::DependentTemplateSpecializationType * dependent_template_specialization_type, NodeDescriptor & node_desc);
+                    virtual bool VisitTypeWithKeyword(clang::TypeWithKeyword * type_with_keyword, NodeDescriptor & node_desc);
+                        virtual bool VisitDependentNameType(clang::DependentNameType * dependent_name_type, NodeDescriptor & node_desc);
+                        virtual bool VisitDependentTemplateSpecializationType(clang::DependentTemplateSpecializationType * dependent_template_specialization_type, NodeDescriptor & node_desc);
                         virtual bool VisitElaboratedType(clang::ElaboratedType * elaborated_type, NodeDescriptor & node_desc);
             //      virtual bool VisitUnaryTransformType(clang::UnaryTransformType * unary_transform_type, NodeDescriptor & node_desc);
             //      virtual bool VisitUnresolvedUsingType(clang::UnresolvedUsingType * unresolved_using_type, NodeDescriptor & node_desc);
