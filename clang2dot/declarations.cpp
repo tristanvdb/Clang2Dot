@@ -381,7 +381,7 @@ bool ClangToDot::VisitParmVarDecl(clang::ParmVarDecl * param_var_decl, ClangToDo
 
     node_desc.successors.push_back(std::pair<std::string, std::string>("default_arg", Traverse(param_var_decl->getDefaultArg())));
 
-    return VisitDecl(param_var_decl, node_desc) && res;
+    return VisitVarDecl(param_var_decl, node_desc) && res;
 }
 
 bool  ClangToDot::VisitEnumConstantDecl(clang::EnumConstantDecl * enum_constant_decl, ClangToDot::NodeDescriptor & node_desc) {

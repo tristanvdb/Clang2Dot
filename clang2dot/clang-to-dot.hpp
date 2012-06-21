@@ -194,7 +194,7 @@ class ClangToDot : public clang::ASTConsumer {
             virtual bool VisitDeclStmt(clang::DeclStmt * decl_stmt, ClangToDot::NodeDescriptor & node_desc);
             virtual bool VisitDoStmt(clang::DoStmt * do_stmt, ClangToDot::NodeDescriptor & node_desc);
             virtual bool VisitExpr(clang::Expr * expr, ClangToDot::NodeDescriptor & node_desc);
-    //          virtual bool VisitAbstractConditionalOperator(clang::AbstractConditionalOperator * abstract_conditional_operator, ClangToDot::NodeDescriptor & node_desc);
+                virtual bool VisitAbstractConditionalOperator(clang::AbstractConditionalOperator * abstract_conditional_operator, ClangToDot::NodeDescriptor & node_desc);
     //              virtual bool VisitBinaryConditionalOperator(clang::BinaryConditionalOperator * binary_conditionnal_operator, ClangToDot::NodeDescriptor & node_desc);
                     virtual bool VisitConditionalOperator(clang::ConditionalOperator * conditional_operator, ClangToDot::NodeDescriptor & node_desc);
     //          virtual bool VisitAddrLabelExpr(clang::AddrLabelExpr * addr_label_expr, ClangToDot::NodeDescriptor & node_desc);
@@ -202,7 +202,7 @@ class ClangToDot : public clang::ASTConsumer {
     //          virtual bool VisitArrayTypeTraitExpr(clang::ArrayTypeTraitExpr * array_type_trait_expr, ClangToDot::NodeDescriptor & node_desc);
     //          virtual bool VisitAsTypeExpr(clang::AsTypeExpr * as_type_expr, ClangToDot::NodeDescriptor & node_desc);
                 virtual bool VisitBinaryOperator(clang::BinaryOperator * binary_operator, ClangToDot::NodeDescriptor & node_desc);
-    //              virtual bool VisitCompoundAssignOperator(clang::CompoundAssignOperator * compound_assign_operator, ClangToDot::NodeDescriptor & node_desc);
+                    virtual bool VisitCompoundAssignOperator(clang::CompoundAssignOperator * compound_assign_operator, ClangToDot::NodeDescriptor & node_desc);
     //          virtual bool VisitBinaryTypeTraitExpr(clang::BinaryTypeTraitExpr * binary_type_trait_expr, ClangToDot::NodeDescriptor & node_desc);
     //          virtual bool VisitBlockDeclRefExpr(clang::BlockDeclRefExpr * block_decl_ref_expr, ClangToDot::NodeDescriptor & node_desc);
     //          virtual bool VisitBlockExpr(clang::BlockExpr * block_expr, ClangToDot::NodeDescriptor & node_desc);
@@ -250,7 +250,7 @@ class ClangToDot : public clang::ASTConsumer {
             //          virtual bool VisitGenericSelectionExpr(clang::GenericSelectionExpr * generic_selection_expr, ClangToDot::NodeDescriptor & node_desc);
             //          virtual bool VisitGNUNullExpr(clang::GNUNullExpr * gnu_null_expr, ClangToDot::NodeDescriptor & node_desc);
                         virtual bool VisitImaginaryLiteral(clang::ImaginaryLiteral * imaginary_literal, ClangToDot::NodeDescriptor & node_desc);
-            //          virtual bool VisitImplicitValueInitExpr(clang::ImplicitValueInitExpr * implicit_value_init_expr, ClangToDot::NodeDescriptor & node_desc);
+                        virtual bool VisitImplicitValueInitExpr(clang::ImplicitValueInitExpr * implicit_value_init_expr, ClangToDot::NodeDescriptor & node_desc);
                         virtual bool VisitInitListExpr(clang::InitListExpr * init_list_expr, ClangToDot::NodeDescriptor & node_desc);
                         virtual bool VisitIntegerLiteral(clang::IntegerLiteral * integer_literal, ClangToDot::NodeDescriptor & node_desc);
                         virtual bool VisitMemberExpr(clang::MemberExpr * member_expr, ClangToDot::NodeDescriptor & node_desc);
