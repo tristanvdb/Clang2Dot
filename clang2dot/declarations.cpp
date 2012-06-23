@@ -38,6 +38,18 @@ std::string ClangToDot::Traverse(clang::Decl * decl) {
         case clang::Decl::Function:
             ret_status = VisitFunctionDecl((clang::FunctionDecl *)decl, node_desc);
             break;
+        case clang::Decl::CXXMethod:
+            ret_status = VisitCXXMethodDecl((clang::CXXMethodDecl *)decl, node_desc);
+            break;
+        case clang::Decl::CXXConstructor:
+            ret_status = VisitCXXConstructorDecl((clang::CXXConstructorDecl *)decl, node_desc);
+            break;
+        case clang::Decl::CXXConversion:
+            ret_status = VisitCXXConversionDecl((clang::CXXConversionDecl *)decl, node_desc);
+            break;
+        case clang::Decl::CXXDestructor:
+            ret_status = VisitCXXDestructorDecl((clang::CXXDestructorDecl *)decl, node_desc);
+            break;
         case clang::Decl::ParmVar:
             ret_status = VisitParmVarDecl((clang::ParmVarDecl *)decl, node_desc);
             break;
@@ -142,6 +154,26 @@ bool ClangToDot::VisitNamedDecl(clang::NamedDecl * named_decl, ClangToDot::NodeD
     node_desc.successors.push_back(std::pair<std::string, std::string>("underlying_decl", Traverse(named_decl->getUnderlyingDecl())));
 
     return VisitDecl(named_decl, node_desc) && res;
+}
+
+bool ClangToDot::VisitNamespaceDecl(clang::NamespaceDecl * namespace_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("NamespaceDecl");
+
+    node_desc.successors.push_back(std::pair<std::string, std::string>("original_namespace", Traverse(namespace_decl->getOriginalNamespace())));
+
+    node_desc.successors.push_back(std::pair<std::string, std::string>("next_namespace", Traverse(namespace_decl->getNextNamespace())));
+
+    clang::DeclContext::decl_iterator it;
+    unsigned cnt = 0;
+    for (it = namespace_decl->decls_begin(); it != namespace_decl->decls_end(); it++) {
+        std::ostringstream oss;
+        oss << "child[" << cnt++ << "]";
+        node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(*it)));
+    }
+
+    return VisitNamedDecl(namespace_decl, node_desc) && res;
 }
 
 bool ClangToDot::VisitTypeDecl(clang::TypeDecl * type_decl, ClangToDot::NodeDescriptor & node_desc) {
@@ -356,6 +388,55 @@ bool ClangToDot::VisitFunctionDecl(clang::FunctionDecl * function_decl, ClangToD
     return VisitDeclaratorDecl(function_decl, node_desc) && res;
 }
 
+bool ClangToDot::VisitCXXMethodDecl(clang::CXXMethodDecl * cxx_method_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("CXXMethodDecl");
+
+    // ...
+
+    return VisitFunctionDecl(cxx_method_decl, node_desc) && res;
+}
+
+bool ClangToDot::VisitCXXConstructorDecl(clang::CXXConstructorDecl * cxx_constructor_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("CXXConstructorDecl");
+
+    // ...
+
+    clang::CXXConstructorDecl::init_iterator it;
+    unsigned cnt = 0;
+    for (it = cxx_constructor_decl->init_begin(); it != cxx_constructor_decl->init_end(); it++) {
+        std::ostringstream oss;
+        oss << "init[" << cnt++ << "]";
+//      node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(*it)));
+        node_desc.attributes.push_back(std::pair<std::string, std::string>(oss.str(), ""));
+    }
+
+    return VisitCXXMethodDecl(cxx_constructor_decl, node_desc) && res;
+}
+
+bool ClangToDot::VisitCXXConversionDecl(clang::CXXConversionDecl * cxx_conversion_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("CXXConversionDecl");
+
+    // ...
+
+    return VisitCXXMethodDecl(cxx_conversion_decl, node_desc) && res;
+}
+
+bool ClangToDot::VisitCXXDestructorDecl(clang::CXXDestructorDecl * cxx_destructor_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("CXXDestructorDecl");
+
+    // ...
+
+    return VisitCXXMethodDecl(cxx_destructor_decl, node_desc) && res;
+}
+
 bool ClangToDot::VisitVarDecl(clang::VarDecl * var_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
@@ -406,6 +487,8 @@ bool ClangToDot::VisitTranslationUnitDecl(clang::TranslationUnitDecl * translati
         oss << "child[" << cnt++ << "]";
         node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(*it)));
     }
+
+    node_desc.successors.push_back(std::pair<std::string, std::string>("anonymous_namespace",  Traverse(translation_unit_decl->getAnonymousNamespace())));
 
     return VisitDecl(translation_unit_decl, node_desc) && res;
 }

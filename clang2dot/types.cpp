@@ -35,6 +35,12 @@ std::string ClangToDot::Traverse(const clang::Type * type) {
         case clang::Type::Pointer:
             ret_status = VisitPointerType((clang::PointerType *)type, node_desc);
             break;
+        case clang::Type::LValueReference:
+            ret_status = VisitLValueReferenceType((clang::LValueReferenceType *)type, node_desc);
+            break;
+        case clang::Type::RValueReference:
+            ret_status = VisitRValueReferenceType((clang::RValueReferenceType *)type, node_desc);
+            break;
         case clang::Type::ConstantArray:
             ret_status = VisitConstantArrayType((clang::ConstantArrayType *)type, node_desc);
             break;
@@ -391,6 +397,32 @@ bool ClangToDot::VisitPointerType(clang::PointerType * pointer_type, ClangToDot:
     node_desc.successors.push_back(std::pair<std::string, std::string>("pointee_type", Traverse(pointer_type->getPointeeType().getTypePtr())));
 
     return VisitType(pointer_type, node_desc) && res;
+}
+
+bool ClangToDot::VisitReferenceType(clang::ReferenceType * reference_type, NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("ReferenceType");
+
+    node_desc.successors.push_back(std::pair<std::string, std::string>("pointee_type", Traverse(reference_type->getPointeeType().getTypePtr())));
+
+    return VisitType(reference_type, node_desc) && res;
+}
+
+bool ClangToDot::VisitLValueReferenceType(clang::LValueReferenceType * lvalue_reference_type, NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("LValueReferenceType");
+
+    return VisitType(lvalue_reference_type, node_desc) && res;
+}
+
+bool ClangToDot::VisitRValueReferenceType(clang::RValueReferenceType * rvalue_reference_type, NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("RValueReferenceType");
+
+    return VisitType(rvalue_reference_type, node_desc) && res;
 }
 
 bool ClangToDot::VisitTagType(clang::TagType * tag_type, ClangToDot::NodeDescriptor & node_desc) {

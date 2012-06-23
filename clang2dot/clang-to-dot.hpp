@@ -137,7 +137,7 @@ class ClangToDot : public clang::ASTConsumer {
     //      virtual bool VisitFriendTemplateDecl(clang::FriendTemplateDecl * friend_template_decl, ClangToDot::NodeDescriptor & node_desc);
             virtual bool VisitNamedDecl(clang::NamedDecl * named_decl, ClangToDot::NodeDescriptor & node_desc);
     //          virtual bool VisitLabelDecl(clang::LabelDecl * label_decl, ClangToDot::NodeDescriptor & node_desc);
-    //          virtual bool VisitNamespaceDecl(clang::NamespaceDecl * namespace_decl, ClangToDot::NodeDescriptor & node_desc);
+                virtual bool VisitNamespaceDecl(clang::NamespaceDecl * namespace_decl, ClangToDot::NodeDescriptor & node_desc);
 //              virtual bool VisitObjCCompatibleAliasDecl(clang::ObjCCompatibleAliasDecl * objc_compatible_alias_decl)
 //              virtual bool VisitObjCContainerDecl(clang::ObjCContainerDecl * objc_container_decl, ClangToDot::NodeDescriptor & node_desc);
 //                  virtual bool VisitObjCCategoryDecl(clang::ObjCCategoryDecl * objc_categoty_decl, ClangToDot::NodeDescriptor & node_desc);
@@ -171,10 +171,10 @@ class ClangToDot : public clang::ASTConsumer {
 //                          virtual bool VisitObjCAtDefsFieldDecl(clang::ObjCAtDefsFieldDecl * objc_at_defs_field_decl, ClangToDot::NodeDescriptor & node_desc);
 //                          virtual bool VisitObjCIvarDecl(clang::ObjCIvarDecl * objc_ivar_decl, ClangToDot::NodeDescriptor & node_desc);
                         virtual bool VisitFunctionDecl(clang::FunctionDecl * function_decl, ClangToDot::NodeDescriptor & node_desc);
-    //                      virtual bool VisitCXXMethodDecl(clang::CXXMethodDecl * cxx_method_decl, ClangToDot::NodeDescriptor & node_desc);
-    //                          virtual bool VisitCXXConstructorDecl(clang::CXXConstructorDecl * cxx_constructor_decl, ClangToDot::NodeDescriptor & node_desc);
-    //                          virtual bool VisitCXXConversionDecl(clang::CXXConversionDecl * cxx_conversion_decl, ClangToDot::NodeDescriptor & node_desc);
-    //                          virtual bool VisitCXXDestructorDecl(clang::CXXDestructorDecl * cxx_destructor_decl, ClangToDot::NodeDescriptor & node_desc);
+                            virtual bool VisitCXXMethodDecl(clang::CXXMethodDecl * cxx_method_decl, ClangToDot::NodeDescriptor & node_desc);
+                                virtual bool VisitCXXConstructorDecl(clang::CXXConstructorDecl * cxx_constructor_decl, ClangToDot::NodeDescriptor & node_desc);
+                                virtual bool VisitCXXConversionDecl(clang::CXXConversionDecl * cxx_conversion_decl, ClangToDot::NodeDescriptor & node_desc);
+                                virtual bool VisitCXXDestructorDecl(clang::CXXDestructorDecl * cxx_destructor_decl, ClangToDot::NodeDescriptor & node_desc);
     //                  virtual bool VisitNonTypeTemplateParmDecl(clang::NonTypeTemplateParmDecl * non_type_template_param_decl, ClangToDot::NodeDescriptor & node_desc);
                         virtual bool VisitVarDecl(clang::VarDecl * var_decl, ClangToDot::NodeDescriptor & node_desc);
     //                      virtual bool VisitImplicitParamDecl(clang::ImplicitParamDecl * implicit_param_decl, ClangToDot::NodeDescriptor & node_desc);
@@ -329,9 +329,9 @@ class ClangToDot : public clang::ASTConsumer {
             //      virtual bool VisitPackExpansionType(clang::PackExpansionType * pack_expansion_type, NodeDescriptor & node_desc);
                     virtual bool VisitParenType(clang::ParenType * paren_type, NodeDescriptor & node_desc);
                     virtual bool VisitPointerType(clang::PointerType * pointer_type, NodeDescriptor & node_desc);
-            //      virtual bool VisitReferenceType(clang::ReferenceType * reference_type, NodeDescriptor & node_desc);
-            //          virtual bool VisitLValueReferenceType(clang::LValueReferenceType * lvalue_reference_type, NodeDescriptor & node_desc);
-            //          virtual bool VisitRValueReferenceType(clang::RValueReferenceType * rvalue_reference_type, NodeDescriptor & node_desc);
+                    virtual bool VisitReferenceType(clang::ReferenceType * reference_type, NodeDescriptor & node_desc);
+                        virtual bool VisitLValueReferenceType(clang::LValueReferenceType * lvalue_reference_type, NodeDescriptor & node_desc);
+                        virtual bool VisitRValueReferenceType(clang::RValueReferenceType * rvalue_reference_type, NodeDescriptor & node_desc);
             //      virtual bool VisitSubstTemplateTypeParmPackType(clang::SubstTemplateTypeParmPackType * subst_template_type_parm_pack_type, NodeDescriptor & node_desc);
             //      virtual bool VisitSubstTemplateTypeParmType(clang::SubstTemplateTypeParmType * subst_template_type_parm_type, NodeDescriptor & node_desc);
                     virtual bool VisitTagType(clang::TagType * tag_type, NodeDescriptor & node_desc);
