@@ -28,18 +28,75 @@ std::string ClangToDot::Traverse(clang::Decl * decl) {
     bool ret_status = false;
 
     switch (decl->getKind()) {
+        case clang::Decl::AccessSpec:
+        case clang::Decl::Block:
+        case clang::Decl::ClassScopeFunctionSpecialization:
+        case clang::Decl::FileScopeAsm:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
         case clang::Decl::Friend:
             ret_status = VisitFriendDecl((clang::FriendDecl *)decl, node_desc);
             break;
-        case clang::Decl::TranslationUnit:
-            ret_status = VisitTranslationUnitDecl((clang::TranslationUnitDecl *)decl, node_desc);
+        case clang::Decl::FriendTemplate:
+        case clang::Decl::LinkageSpec:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+     // Named
+        case clang::Decl::Label:
+        case clang::Decl::NamespaceAlias:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Decl::Namespace:
+            ret_status = VisitNamespaceDecl((clang::NamespaceDecl *)decl, node_desc);
+            break;
+     // Objective C ... 
+     // Template
+     // RedeclarableTemplate
+        case clang::Decl::ClassTemplate:
+            ret_status = VisitClassTemplateDecl((clang::ClassTemplateDecl *)decl, node_desc);
+            break;
+        case clang::Decl::FunctionTemplate:
+        case clang::Decl::TypeAliasTemplate:
+        case clang::Decl::TemplateTemplateParm:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+     // Type
+     // Tag
+        case clang::Decl::Enum:
+            ret_status = VisitEnumDecl((clang::EnumDecl *)decl, node_desc);
+            break;
+        case clang::Decl::Record:
+            ret_status = VisitRecordDecl((clang::RecordDecl *)decl, node_desc);
+            break;
+        case clang::Decl::CXXRecord:
+            ret_status = VisitCXXRecordDecl((clang::CXXRecordDecl *)decl, node_desc);
+            break;
+        case clang::Decl::ClassTemplateSpecialization:
+        case clang::Decl::ClassTemplatePartialSpecialization:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Decl::TemplateTypeParm:
+            ret_status = VisitTemplateTypeParmDecl((clang::TemplateTypeParmDecl *)decl, node_desc);
+            break;
+     // TypedefName
+        case clang::Decl::TypeAlias:
+            assert(DEBUG_TODO == 0); // TODO
             break;
         case clang::Decl::Typedef:
             ret_status = VisitTypedefDecl((clang::TypedefDecl *)decl, node_desc);
             break;
-        case clang::Decl::Var:
-            ret_status = VisitVarDecl((clang::VarDecl *)decl, node_desc);
+        case clang::Decl::UnresolvedUsingTypename:
+        case clang::Decl::Using:
+        case clang::Decl::UsingDirective:
+        case clang::Decl::UsingShadow:
+            assert(DEBUG_TODO == 0); // TODO
             break;
+     // Value
+     // Declarator
+        case clang::Decl::Field:
+            ret_status = VisitFieldDecl((clang::FieldDecl *)decl, node_desc);
+            break;
+     // Objective-C ....
         case clang::Decl::Function:
             ret_status = VisitFunctionDecl((clang::FunctionDecl *)decl, node_desc);
             break;
@@ -58,32 +115,26 @@ std::string ClangToDot::Traverse(clang::Decl * decl) {
         case clang::Decl::NonTypeTemplateParm:
             ret_status = VisitNonTypeTemplateParmDecl((clang::NonTypeTemplateParmDecl *)decl, node_desc);
             break;
+        case clang::Decl::Var:
+            ret_status = VisitVarDecl((clang::VarDecl *)decl, node_desc);
+            break;
+        case clang::Decl::ImplicitParam:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
         case clang::Decl::ParmVar:
             ret_status = VisitParmVarDecl((clang::ParmVarDecl *)decl, node_desc);
-            break;
-        case clang::Decl::CXXRecord:
-          ret_status = VisitCXXRecordDecl((clang::CXXRecordDecl *)decl, node_desc);
-          break;
-        case clang::Decl::Record:
-            ret_status = VisitRecordDecl((clang::RecordDecl *)decl, node_desc);
-            break;
-        case clang::Decl::Field:
-            ret_status = VisitFieldDecl((clang::FieldDecl *)decl, node_desc);
-            break;
-        case clang::Decl::Enum:
-            ret_status = VisitEnumDecl((clang::EnumDecl *)decl, node_desc);
             break;
         case clang::Decl::EnumConstant:
             ret_status = VisitEnumConstantDecl((clang::EnumConstantDecl *)decl, node_desc);
             break;
-        case clang::Decl::ClassTemplate:
-            ret_status = VisitClassTemplateDecl((clang::ClassTemplateDecl *)decl, node_desc);
+        case clang::Decl::IndirectField:
+        case clang::Decl::UnresolvedUsingValue:
+     // Objective-C ...
+        case clang::Decl::StaticAssert:
+            assert(DEBUG_TODO == 0); // TODO
             break;
-        case clang::Decl::TemplateTypeParm:
-            ret_status = VisitTemplateTypeParmDecl((clang::TemplateTypeParmDecl *)decl, node_desc);
-            break;
-        case clang::Decl::Namespace:
-            ret_status = VisitNamespaceDecl((clang::NamespaceDecl *)decl, node_desc);
+        case clang::Decl::TranslationUnit:
+            ret_status = VisitTranslationUnitDecl((clang::TranslationUnitDecl *)decl, node_desc);
             break;
         default:
             std::cerr << "Unknown declacaration kind: " << decl->getDeclKindName() << " !" << std::endl;

@@ -26,21 +26,7 @@ std::string ClangToDot::Traverse(const clang::Type * type) {
     bool ret_status = false;
 
     switch (type->getTypeClass()) {
-        case clang::Type::Builtin:
-            ret_status = VisitBuiltinType((clang::BuiltinType *)type, node_desc);
-            break;
-        case clang::Type::Complex:
-            ret_status = VisitComplexType((clang::ComplexType *)type, node_desc);
-            break;
-        case clang::Type::Pointer:
-            ret_status = VisitPointerType((clang::PointerType *)type, node_desc);
-            break;
-        case clang::Type::LValueReference:
-            ret_status = VisitLValueReferenceType((clang::LValueReferenceType *)type, node_desc);
-            break;
-        case clang::Type::RValueReference:
-            ret_status = VisitRValueReferenceType((clang::RValueReferenceType *)type, node_desc);
-            break;
+     // Array
         case clang::Type::ConstantArray:
             ret_status = VisitConstantArrayType((clang::ConstantArrayType *)type, node_desc);
             break;
@@ -53,20 +39,59 @@ std::string ClangToDot::Traverse(const clang::Type * type) {
         case clang::Type::VariableArray:
             ret_status = VisitVariableArrayType((clang::VariableArrayType *)type, node_desc);
             break;
-        case clang::Type::Paren:
-            ret_status = VisitParenType((clang::ParenType *)type, node_desc);
+        case clang::Type::Atomic:
+        case clang::Type::Attributed:
+        case clang::Type::Auto:
+        case clang::Type::BlockPointer:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Type::Builtin:
+            ret_status = VisitBuiltinType((clang::BuiltinType *)type, node_desc);
+            break;
+        case clang::Type::Complex:
+            ret_status = VisitComplexType((clang::ComplexType *)type, node_desc);
+            break;
+        case clang::Type::Decltype:
+        case clang::Type::DependentSizedExtVector:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+     // Function
+        case clang::Type::FunctionNoProto:
+            ret_status = VisitFunctionNoProtoType((clang::FunctionNoProtoType *)type, node_desc);
             break;
         case clang::Type::FunctionProto:
             ret_status = VisitFunctionProtoType((clang::FunctionProtoType *)type, node_desc);
             break;
-        case clang::Type::FunctionNoProto:
-            ret_status = VisitFunctionNoProtoType((clang::FunctionNoProtoType *)type, node_desc);
-            break;
         case clang::Type::InjectedClassName:
             ret_status = VisitInjectedClassNameType((clang::InjectedClassNameType *)type, node_desc);
             break;
-        case clang::Type::Elaborated:
-            ret_status = VisitElaboratedType((clang::ElaboratedType *)type, node_desc);
+        case clang::Type::MemberPointer:
+     // Objective-C ...
+        case clang::Type::PackExpansion:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Type::Paren:
+            ret_status = VisitParenType((clang::ParenType *)type, node_desc);
+            break;
+        case clang::Type::Pointer:
+            ret_status = VisitPointerType((clang::PointerType *)type, node_desc);
+            break;
+     // Reference
+        case clang::Type::LValueReference:
+            ret_status = VisitLValueReferenceType((clang::LValueReferenceType *)type, node_desc);
+            break;
+        case clang::Type::RValueReference:
+            ret_status = VisitRValueReferenceType((clang::RValueReferenceType *)type, node_desc);
+            break;
+        case clang::Type::SubstTemplateTypeParmPack:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Type::SubstTemplateTypeParm:
+            ret_status = VisitSubstTemplateTypeParmType((clang::SubstTemplateTypeParmType *)type, node_desc);
+            break;
+     // Tag
+        case clang::Type::Enum:
+            ret_status = VisitEnumType((clang::EnumType *)type, node_desc);
             break;
         case clang::Type::Record:
             ret_status = VisitRecordType((clang::RecordType *)type, node_desc);
@@ -77,18 +102,26 @@ std::string ClangToDot::Traverse(const clang::Type * type) {
         case clang::Type::TemplateTypeParm:
             ret_status = VisitTemplateTypeParmType((clang::TemplateTypeParmType *)type, node_desc);
             break;
-        case clang::Type::Enum:
-            ret_status = VisitEnumType((clang::EnumType *)type, node_desc);
-            break;
         case clang::Type::Typedef:
             ret_status = VisitTypedefType((clang::TypedefType *)type, node_desc);
             break;
-        case clang::Type::ExtVector:
+        case clang::Type::TypeOfExpr:
+        case clang::Type::TypeOf:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+     // TypeWithKeyword
+        case clang::Type::DependentName:
+        case clang::Type::DependentTemplateSpecialization:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Type::Elaborated:
+            ret_status = VisitElaboratedType((clang::ElaboratedType *)type, node_desc);
+            break;
         case clang::Type::Vector:
             ret_status = VisitVectorType((clang::VectorType *)type, node_desc);
             break;
-        case clang::Type::SubstTemplateTypeParm:
-            ret_status = VisitSubstTemplateTypeParmType((clang::SubstTemplateTypeParmType *)type, node_desc);
+        case clang::Type::ExtVector:
+            ret_status = VisitExtVectorType((clang::ExtVectorType *)type, node_desc);
             break;
         default:
             std::cerr << "Unknown type kind " << type->getTypeClassName() << " !" << std::endl;
@@ -494,124 +527,6 @@ bool ClangToDot::VisitRecordType(clang::RecordType * record_type, ClangToDot::No
     node_desc.kind_hierarchy.push_back("RecordType");
 
     return VisitTagType(record_type, node_desc) && res;
-}
-
-void ClangToDot::VisitTemplateArgument(const clang::TemplateArgument & template_argument, ClangToDot::NodeDescriptor & node_desc, std::string prefix) {
-    std::ostringstream oss;
-    oss << prefix;
-    switch (template_argument.getKind()) {
-        case clang::TemplateArgument::Null:
-            oss << " null";
-            node_desc.attributes.push_back(std::pair<std::string, std::string>(oss.str(), ""));
-            break;
-        case clang::TemplateArgument::Type:
-            oss << " type";
-            node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(template_argument.getAsType().getTypePtr())));
-            break;
-        case clang::TemplateArgument::Declaration:
-            oss << " declaration";
-            node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(template_argument.getAsDecl())));
-            break;
-        case clang::TemplateArgument::Integral:
-            oss << " integral";
-            assert(DEBUG_TODO == 0); // TODO
-            break;
-        case clang::TemplateArgument::Template:
-            oss << " template";
-            assert(DEBUG_TODO == 0); // TODO
-            break;
-        case clang::TemplateArgument::TemplateExpansion:
-            oss << " template_expansion";
-            assert(DEBUG_TODO == 0); // TODO
-            break;
-        case clang::TemplateArgument::Expression:
-            oss << " expression";
-            node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(template_argument.getAsExpr())));
-            break;
-        case clang::TemplateArgument::Pack:
-        {
-            clang::TemplateArgument::pack_iterator pack_it;
-            unsigned cnt = 0;
-            for (pack_it = template_argument.pack_begin(); pack_it != template_argument.pack_end(); pack_it++) {
-                oss << " pack[" << cnt++ << "]";
-                VisitTemplateArgument(*pack_it, node_desc, oss.str());
-            }
-            break;
-        }
-    }
-}
-
-void ClangToDot::VisitNestedNameSpecifier(clang::NestedNameSpecifier * nested_name_specifier, ClangToDot::NodeDescriptor & node_desc, std::string prefix) {
-    if (nested_name_specifier == NULL) return;
-
-    ClangToDot::VisitNestedNameSpecifier(nested_name_specifier->getPrefix(), node_desc, prefix + " prefix");
-
-    switch (nested_name_specifier->getKind()) {
-        case clang::NestedNameSpecifier::Identifier:
-            node_desc.attributes.push_back(
-                std::pair<std::string, std::string>(prefix + " identifier", nested_name_specifier->getAsIdentifier()->getName().data())
-            );
-            break;
-        case clang::NestedNameSpecifier::Namespace:
-            node_desc.successors.push_back(
-                std::pair<std::string, std::string>(prefix + " namespace", Traverse(nested_name_specifier->getAsNamespace()))
-            );
-            break;
-        case clang::NestedNameSpecifier::NamespaceAlias:
-            node_desc.successors.push_back(
-                std::pair<std::string, std::string>(prefix + " namespace_alias", Traverse(nested_name_specifier->getAsNamespaceAlias()))
-            );
-            break;
-        case clang::NestedNameSpecifier::TypeSpec:
-            node_desc.successors.push_back(
-                std::pair<std::string, std::string>(prefix + " type_specifier", Traverse(nested_name_specifier->getAsType()))
-            );
-            break;
-        case clang::NestedNameSpecifier::TypeSpecWithTemplate:
-            node_desc.successors.push_back(
-                std::pair<std::string, std::string>(prefix + " type_specifier_with_template", Traverse(nested_name_specifier->getAsType()))
-            );
-            break;
-        case clang::NestedNameSpecifier::Global:
-            node_desc.attributes.push_back(std::pair<std::string, std::string>(prefix, "global (::)"));
-            break;
-    }
-}
-
-void ClangToDot::VisitTemplateName(const clang::TemplateName & template_name, ClangToDot::NodeDescriptor & node_desc, std::string prefix) {
-    std::ostringstream oss;
-    oss << prefix;
-    switch (template_name.getKind()) {
-        case clang::TemplateName::Template:
-            oss << " template";
-            node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(template_name.getAsTemplateDecl())));
-            break;
-        case clang::TemplateName::OverloadedTemplate:
-        {
-            clang::OverloadedTemplateStorage * overloaded_template_storage = template_name.getAsOverloadedTemplate();
-            assert(DEBUG_TODO == 0); // TODO
-            break;
-        }
-        case clang::TemplateName::QualifiedTemplate:
-            oss << " qualified_template";
-            VisitNestedNameSpecifier(template_name.getAsQualifiedTemplateName()->getQualifier(), node_desc, oss.str() + "nested_name_specifier");
-            node_desc.successors.push_back(
-                std::pair<std::string, std::string>(oss.str() + "declaration", Traverse(template_name.getAsQualifiedTemplateName()->getDecl()))
-            );
-            node_desc.successors.push_back(
-                std::pair<std::string, std::string>(oss.str() + "template_declaration", Traverse(template_name.getAsQualifiedTemplateName()->getTemplateDecl()))
-            );
-            break;
-        case clang::TemplateName::DependentTemplate:
-            assert(DEBUG_TODO == 0); // TODO
-            break;
-        case clang::TemplateName::SubstTemplateTemplateParm:
-            assert(DEBUG_TODO == 0); // TODO
-            break;
-        case clang::TemplateName::SubstTemplateTemplateParmPack:
-            assert(DEBUG_TODO == 0); // TODO
-            break;
-    }
 }
 
 bool ClangToDot::VisitTemplateSpecializationType(clang::TemplateSpecializationType * template_specialization_type, NodeDescriptor & node_desc) {

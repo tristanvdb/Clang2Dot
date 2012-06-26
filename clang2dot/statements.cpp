@@ -27,50 +27,9 @@ std::string ClangToDot::Traverse(clang::Stmt * stmt) {
     bool ret_status = false;
 
     switch (stmt->getStmtClass()) {
-        case clang::Stmt::InitListExprClass:
-            ret_status = VisitInitListExpr((clang::InitListExpr *)stmt, node_desc);
-            break;
-        case clang::Stmt::DesignatedInitExprClass:
-            ret_status = VisitDesignatedInitExpr((clang::DesignatedInitExpr *)stmt, node_desc);
-            break;
-        case clang::Stmt::IntegerLiteralClass:
-            ret_status = VisitIntegerLiteral((clang::IntegerLiteral *)stmt, node_desc);
-            break;
-        case clang::Stmt::FloatingLiteralClass:
-            ret_status = VisitFloatingLiteral((clang::FloatingLiteral *)stmt, node_desc);
-            break;
-        case clang::Stmt::ImaginaryLiteralClass:
-            ret_status = VisitImaginaryLiteral((clang::ImaginaryLiteral *)stmt, node_desc);
-            break;
-        case clang::Stmt::CompoundLiteralExprClass:
-            ret_status = VisitCompoundLiteralExpr((clang::CompoundLiteralExpr *)stmt, node_desc);
-            break;
-        case clang::Stmt::CXXConstructExprClass:
-            ret_status = VisitCXXConstructExpr((clang::CXXConstructExpr *)stmt, node_desc);
-            break;
-        case clang::Stmt::ImplicitCastExprClass:
-            ret_status = VisitImplicitCastExpr((clang::ImplicitCastExpr *)stmt, node_desc);
-            break;
-        case clang::Stmt::CharacterLiteralClass:
-            ret_status = VisitCharacterLiteral((clang::CharacterLiteral *)stmt, node_desc);
-            break;
-        case clang::Stmt::ParenExprClass:
-            ret_status = VisitParenExpr((clang::ParenExpr *)stmt, node_desc);
-            break;
-        case clang::Stmt::PredefinedExprClass:
-            ret_status = VisitPredefinedExpr((clang::PredefinedExpr *)stmt, node_desc);
-            break;
-        case clang::Stmt::StmtExprClass:
-            ret_status = VisitStmtExpr((clang::StmtExpr *)stmt, node_desc);
-            break;
-        case clang::Stmt::StringLiteralClass:
-            ret_status = VisitStringLiteral((clang::StringLiteral *)stmt, node_desc);
-            break;
-        case clang::Stmt::UnaryExprOrTypeTraitExprClass:
-            ret_status = VisitUnaryExprOrTypeTraitExpr((clang::UnaryExprOrTypeTraitExpr *)stmt, node_desc);
-            break;
-        case clang::Stmt::ExtVectorElementExprClass:
-            ret_status = VisitExtVectorElementExpr((clang::ExtVectorElementExpr *)stmt, node_desc);
+     // Stmt
+        case clang::Stmt::AsmStmtClass:
+            assert(DEBUG_TODO == 0); // TODO
             break;
         case clang::Stmt::BreakStmtClass:
             ret_status = VisitBreakStmt((clang::BreakStmt *)stmt, node_desc);
@@ -81,35 +40,35 @@ std::string ClangToDot::Traverse(clang::Stmt * stmt) {
         case clang::Stmt::ContinueStmtClass:
             ret_status = VisitContinueStmt((clang::ContinueStmt *)stmt, node_desc);
             break;
+        case clang::Stmt::CXXCatchStmtClass:
+        case clang::Stmt::CXXForRangeStmtClass:
+        case clang::Stmt::CXXTryStmtClass:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
         case clang::Stmt::DeclStmtClass:
             ret_status = VisitDeclStmt((clang::DeclStmt *)stmt, node_desc);
-            break;
-        case clang::Stmt::CallExprClass:
-            ret_status = VisitCallExpr((clang::CallExpr *)stmt, node_desc);
-            break;
-        case clang::Stmt::CStyleCastExprClass:
-            ret_status = VisitCStyleCastExpr((clang::CStyleCastExpr *)stmt, node_desc);
-            break;
-        case clang::Stmt::DeclRefExprClass:
-            ret_status = VisitDeclRefExpr((clang::DeclRefExpr *)stmt, node_desc);
-            break;
-        case clang::Stmt::UnaryOperatorClass:
-            ret_status = VisitUnaryOperator((clang::UnaryOperator *)stmt, node_desc);
-            break;
-        case clang::Stmt::VAArgExprClass:
-            ret_status = VisitVAArgExpr((clang::VAArgExpr *)stmt, node_desc);
-            break;
-        case clang::Stmt::ForStmtClass:
-            ret_status = VisitForStmt((clang::ForStmt *)stmt, node_desc);
-            break;
-        case clang::Stmt::IfStmtClass:
-            ret_status = VisitIfStmt((clang::IfStmt *)stmt, node_desc);
             break;
         case clang::Stmt::DoStmtClass:
             ret_status = VisitDoStmt((clang::DoStmt *)stmt, node_desc);
             break;
-        case clang::Stmt::ReturnStmtClass:
-            ret_status = VisitReturnStmt((clang::ReturnStmt *)stmt, node_desc);
+     // Expr
+     // AbstractConditionalOperator
+        case clang::Stmt::BinaryConditionalOperatorClass:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Stmt::ConditionalOperatorClass:
+            ret_status = VisitConditionalOperator((clang::ConditionalOperator *)stmt, node_desc);
+            break;
+        case clang::Stmt::AddrLabelExprClass:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Stmt::ArraySubscriptExprClass:
+            ret_status = VisitArraySubscriptExpr((clang::ArraySubscriptExpr *)stmt, node_desc);
+            break;
+        case clang::Stmt::ArrayTypeTraitExprClass:
+        case clang::Stmt::AsTypeExprClass:
+        case clang::Stmt::AtomicExprClass:
+            assert(DEBUG_TODO == 0); // TODO
             break;
         case clang::Stmt::BinaryOperatorClass:
             ret_status = VisitBinaryOperator((clang::BinaryOperator *)stmt, node_desc);
@@ -117,14 +76,164 @@ std::string ClangToDot::Traverse(clang::Stmt * stmt) {
         case clang::Stmt::CompoundAssignOperatorClass:
             ret_status = VisitCompoundAssignOperator((clang::CompoundAssignOperator *)stmt, node_desc);
             break;
-        case clang::Stmt::ConditionalOperatorClass:
-            ret_status = VisitConditionalOperator((clang::ConditionalOperator *)stmt, node_desc);
+        case clang::Stmt::BinaryTypeTraitExprClass:
+        case clang::Stmt::BlockDeclRefExprClass:
+        case clang::Stmt::BlockExprClass:
+            assert(DEBUG_TODO == 0); // TODO
             break;
-        case clang::Stmt::ArraySubscriptExprClass:
-            ret_status = VisitArraySubscriptExpr((clang::ArraySubscriptExpr *)stmt, node_desc);
+        case clang::Stmt::CallExprClass:
+            ret_status = VisitCallExpr((clang::CallExpr *)stmt, node_desc);
+            break;
+        case clang::Stmt::CUDAKernelCallExprClass:
+        case clang::Stmt::CXXMemberCallExprClass:
+        case clang::Stmt::CXXOperatorCallExprClass:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+     // CastExpr
+     // ExplicitCastExpr
+        case clang::Stmt::CStyleCastExprClass:
+            ret_status = VisitCStyleCastExpr((clang::CStyleCastExpr *)stmt, node_desc);
+            break;
+        case clang::Stmt::CXXFunctionalCastExprClass:
+     // CXXNamedCastExpr
+        case clang::Stmt::CXXConstCastExprClass:
+        case clang::Stmt::CXXDynamicCastExprClass:
+        case clang::Stmt::CXXReinterpretCastExprClass:
+        case clang::Stmt::CXXStaticCastExprClass:
+     // ObjCBridgedCastExpr 
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Stmt::ImplicitCastExprClass:
+            ret_status = VisitImplicitCastExpr((clang::ImplicitCastExpr *)stmt, node_desc);
+            break;
+        case clang::Stmt::CharacterLiteralClass:
+            ret_status = VisitCharacterLiteral((clang::CharacterLiteral *)stmt, node_desc);
+            break;
+        case clang::Stmt::ChooseExprClass:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Stmt::CompoundLiteralExprClass:
+            ret_status = VisitCompoundLiteralExpr((clang::CompoundLiteralExpr *)stmt, node_desc);
+            break;
+        case clang::Stmt::CXXBindTemporaryExprClass:
+        case clang::Stmt::CXXBoolLiteralExprClass:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Stmt::CXXConstructExprClass:
+            ret_status = VisitCXXConstructExpr((clang::CXXConstructExpr *)stmt, node_desc);
+            break;
+        case clang::Stmt::CXXTemporaryObjectExprClass:
+        case clang::Stmt::CXXDefaultArgExprClass:
+        case clang::Stmt::CXXDeleteExprClass:
+        case clang::Stmt::CXXDependentScopeMemberExprClass:
+        case clang::Stmt::CXXNewExprClass:
+        case clang::Stmt::CXXNoexceptExprClass:
+        case clang::Stmt::CXXNullPtrLiteralExprClass:
+        case clang::Stmt::CXXPseudoDestructorExprClass:
+        case clang::Stmt::CXXScalarValueInitExprClass:
+        case clang::Stmt::CXXThisExprClass:
+        case clang::Stmt::CXXThrowExprClass:
+        case clang::Stmt::CXXTypeidExprClass:
+        case clang::Stmt::CXXUnresolvedConstructExprClass:
+        case clang::Stmt::CXXUuidofExprClass:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Stmt::DeclRefExprClass:
+            ret_status = VisitDeclRefExpr((clang::DeclRefExpr *)stmt, node_desc);
+            break;
+        case clang::Stmt::DependentScopeDeclRefExprClass:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Stmt::DesignatedInitExprClass:
+            ret_status = VisitDesignatedInitExpr((clang::DesignatedInitExpr *)stmt, node_desc);
+            break;
+        case clang::Stmt::ExpressionTraitExprClass:
+        case clang::Stmt::ExprWithCleanupsClass:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Stmt::ExtVectorElementExprClass:
+            ret_status = VisitExtVectorElementExpr((clang::ExtVectorElementExpr *)stmt, node_desc);
+            break;
+        case clang::Stmt::FloatingLiteralClass:
+            ret_status = VisitFloatingLiteral((clang::FloatingLiteral *)stmt, node_desc);
+            break;
+        case clang::Stmt::GenericSelectionExprClass:
+        case clang::Stmt::GNUNullExprClass:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Stmt::ImaginaryLiteralClass:
+            ret_status = VisitImaginaryLiteral((clang::ImaginaryLiteral *)stmt, node_desc);
+            break;
+        case clang::Stmt::ImplicitValueInitExprClass:
+            ret_status = VisitImplicitValueInitExpr((clang::ImplicitValueInitExpr *)stmt, node_desc);
+            break;
+        case clang::Stmt::InitListExprClass:
+            ret_status = VisitInitListExpr((clang::InitListExpr *)stmt, node_desc);
+            break;
+        case clang::Stmt::IntegerLiteralClass:
+            ret_status = VisitIntegerLiteral((clang::IntegerLiteral *)stmt, node_desc);
+            break;
+        case clang::Stmt::MaterializeTemporaryExprClass:
+            assert(DEBUG_TODO == 0); // TODO
             break;
         case clang::Stmt::MemberExprClass:
             ret_status = VisitMemberExpr((clang::MemberExpr *)stmt, node_desc);
+            break;
+     // Ojective-C ...
+        case clang::Stmt::OffsetOfExprClass:
+        case clang::Stmt::OpaqueValueExprClass:
+     // OverloadExpr
+        case clang::Stmt::UnresolvedLookupExprClass:
+        case clang::Stmt::UnresolvedMemberExprClass:
+        case clang::Stmt::PackExpansionExprClass:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Stmt::ParenExprClass:
+            ret_status = VisitParenExpr((clang::ParenExpr *)stmt, node_desc);
+            break;
+        case clang::Stmt::ParenListExprClass:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Stmt::PredefinedExprClass:
+            ret_status = VisitPredefinedExpr((clang::PredefinedExpr *)stmt, node_desc);
+            break;
+        case clang::Stmt::ShuffleVectorExprClass:
+        case clang::Stmt::SizeOfPackExprClass:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Stmt::StmtExprClass:
+            ret_status = VisitStmtExpr((clang::StmtExpr *)stmt, node_desc);
+            break;
+        case clang::Stmt::StringLiteralClass:
+            ret_status = VisitStringLiteral((clang::StringLiteral *)stmt, node_desc);
+            break;
+        case clang::Stmt::SubstNonTypeTemplateParmExprClass:
+        case clang::Stmt::SubstNonTypeTemplateParmPackExprClass:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::Stmt::UnaryExprOrTypeTraitExprClass:
+            ret_status = VisitUnaryExprOrTypeTraitExpr((clang::UnaryExprOrTypeTraitExpr *)stmt, node_desc);
+            break;
+        case clang::Stmt::UnaryOperatorClass:
+            ret_status = VisitUnaryOperator((clang::UnaryOperator *)stmt, node_desc);
+            break;
+        case clang::Stmt::UnaryTypeTraitExprClass:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+       case clang::Stmt::VAArgExprClass:
+            ret_status = VisitVAArgExpr((clang::VAArgExpr *)stmt, node_desc);
+            break;
+        case clang::Stmt::ForStmtClass:
+            ret_status = VisitForStmt((clang::ForStmt *)stmt, node_desc);
+            break;
+        case clang::Stmt::GotoStmtClass:
+            ret_status = VisitGotoStmt((clang::GotoStmt *)stmt, node_desc);
+            break;
+        case clang::Stmt::IfStmtClass:
+            ret_status = VisitIfStmt((clang::IfStmt *)stmt, node_desc);
+            break;
+        case clang::Stmt::IndirectGotoStmtClass:
+            assert(DEBUG_TODO == 0); // TODO
             break;
         case clang::Stmt::LabelStmtClass:
             ret_status = VisitLabelStmt((clang::LabelStmt *)stmt, node_desc);
@@ -132,12 +241,12 @@ std::string ClangToDot::Traverse(clang::Stmt * stmt) {
         case clang::Stmt::NullStmtClass:
             ret_status = VisitNullStmt((clang::NullStmt *)stmt, node_desc);
             break;
-        case clang::Stmt::GotoStmtClass:
-            ret_status = VisitGotoStmt((clang::GotoStmt *)stmt, node_desc);
+     // Objective-C ...
+        case clang::Stmt::ReturnStmtClass:
+            ret_status = VisitReturnStmt((clang::ReturnStmt *)stmt, node_desc);
             break;
-        case clang::Stmt::WhileStmtClass:
-            ret_status = VisitWhileStmt((clang::WhileStmt *)stmt, node_desc);
-            break;
+     // SEH ???
+     // SwitchCase
         case clang::Stmt::CaseStmtClass:
             ret_status = VisitCaseStmt((clang::CaseStmt *)stmt, node_desc);
             break;
@@ -147,10 +256,9 @@ std::string ClangToDot::Traverse(clang::Stmt * stmt) {
         case clang::Stmt::SwitchStmtClass:
             ret_status = VisitSwitchStmt((clang::SwitchStmt *)stmt, node_desc);
             break;
-        case clang::Stmt::ImplicitValueInitExprClass:
-            ret_status = VisitImplicitValueInitExpr((clang::ImplicitValueInitExpr *)stmt, node_desc);
+        case clang::Stmt::WhileStmtClass:
+            ret_status = VisitWhileStmt((clang::WhileStmt *)stmt, node_desc);
             break;
-        // TODO
         default:
             std::cerr << "Unknown statement kind: " << stmt->getStmtClassName() << " !" << std::endl;
             assert(false);

@@ -216,3 +216,120 @@ void ClangToDot::NodeDescriptor::toDot(std::ostream & out) const {
     out << std::endl;
 }
 
+void ClangToDot::VisitTemplateArgument(const clang::TemplateArgument & template_argument, ClangToDot::NodeDescriptor & node_desc, std::string prefix) {
+    std::ostringstream oss;
+    oss << prefix;
+    switch (template_argument.getKind()) {
+        case clang::TemplateArgument::Null:
+            oss << " null";
+            node_desc.attributes.push_back(std::pair<std::string, std::string>(oss.str(), ""));
+            break;
+        case clang::TemplateArgument::Type:
+            oss << " type";
+            node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(template_argument.getAsType().getTypePtr())));
+            break;
+        case clang::TemplateArgument::Declaration:
+            oss << " declaration";
+            node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(template_argument.getAsDecl())));
+            break;
+        case clang::TemplateArgument::Integral:
+            oss << " integral";
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::TemplateArgument::Template:
+            oss << " template";
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::TemplateArgument::TemplateExpansion:
+            oss << " template_expansion";
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::TemplateArgument::Expression:
+            oss << " expression";
+            node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(template_argument.getAsExpr())));
+            break;
+        case clang::TemplateArgument::Pack:
+        {
+            clang::TemplateArgument::pack_iterator pack_it;
+            unsigned cnt = 0;
+            for (pack_it = template_argument.pack_begin(); pack_it != template_argument.pack_end(); pack_it++) {
+                oss << " pack[" << cnt++ << "]";
+                VisitTemplateArgument(*pack_it, node_desc, oss.str());
+            }
+            break;
+        }
+    }
+}
+
+void ClangToDot::VisitNestedNameSpecifier(clang::NestedNameSpecifier * nested_name_specifier, ClangToDot::NodeDescriptor & node_desc, std::string prefix) {
+    if (nested_name_specifier == NULL) return;
+
+    ClangToDot::VisitNestedNameSpecifier(nested_name_specifier->getPrefix(), node_desc, prefix + " prefix");
+
+    switch (nested_name_specifier->getKind()) {
+        case clang::NestedNameSpecifier::Identifier:
+            node_desc.attributes.push_back(
+                std::pair<std::string, std::string>(prefix + " identifier", nested_name_specifier->getAsIdentifier()->getName().data())
+            );
+            break;
+        case clang::NestedNameSpecifier::Namespace:
+            node_desc.successors.push_back(
+                std::pair<std::string, std::string>(prefix + " namespace", Traverse(nested_name_specifier->getAsNamespace()))
+            );
+            break;
+        case clang::NestedNameSpecifier::NamespaceAlias:
+            node_desc.successors.push_back(
+                std::pair<std::string, std::string>(prefix + " namespace_alias", Traverse(nested_name_specifier->getAsNamespaceAlias()))
+            );
+            break;
+        case clang::NestedNameSpecifier::TypeSpec:
+            node_desc.successors.push_back(
+                std::pair<std::string, std::string>(prefix + " type_specifier", Traverse(nested_name_specifier->getAsType()))
+            );
+            break;
+        case clang::NestedNameSpecifier::TypeSpecWithTemplate:
+            node_desc.successors.push_back(
+                std::pair<std::string, std::string>(prefix + " type_specifier_with_template", Traverse(nested_name_specifier->getAsType()))
+            );
+            break;
+        case clang::NestedNameSpecifier::Global:
+            node_desc.attributes.push_back(std::pair<std::string, std::string>(prefix, "global (::)"));
+            break;
+    }
+}
+
+void ClangToDot::VisitTemplateName(const clang::TemplateName & template_name, ClangToDot::NodeDescriptor & node_desc, std::string prefix) {
+    std::ostringstream oss;
+    oss << prefix;
+    switch (template_name.getKind()) {
+        case clang::TemplateName::Template:
+            oss << " template";
+            node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(template_name.getAsTemplateDecl())));
+            break;
+        case clang::TemplateName::OverloadedTemplate:
+        {
+            clang::OverloadedTemplateStorage * overloaded_template_storage = template_name.getAsOverloadedTemplate();
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        }
+        case clang::TemplateName::QualifiedTemplate:
+            oss << " qualified_template";
+            VisitNestedNameSpecifier(template_name.getAsQualifiedTemplateName()->getQualifier(), node_desc, oss.str() + "nested_name_specifier");
+            node_desc.successors.push_back(
+                std::pair<std::string, std::string>(oss.str() + "declaration", Traverse(template_name.getAsQualifiedTemplateName()->getDecl()))
+            );
+            node_desc.successors.push_back(
+                std::pair<std::string, std::string>(oss.str() + "template_declaration", Traverse(template_name.getAsQualifiedTemplateName()->getTemplateDecl()))
+            );
+            break;
+        case clang::TemplateName::DependentTemplate:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::TemplateName::SubstTemplateTemplateParm:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+        case clang::TemplateName::SubstTemplateTemplateParmPack:
+            assert(DEBUG_TODO == 0); // TODO
+            break;
+    }
+}
