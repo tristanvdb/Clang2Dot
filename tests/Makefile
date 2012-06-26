@@ -14,7 +14,11 @@ test_2.c
 
 CXX_TEST_CODES = \
 test_0.cpp \
-test_1.cpp 
+test_1.cpp \
+test_2.cpp \
+test_3.cpp \
+test_4.cpp \
+test_5.cpp
 
   # GraphViz targets
 

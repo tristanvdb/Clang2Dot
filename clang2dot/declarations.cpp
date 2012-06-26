@@ -5,6 +5,8 @@
 #include <sstream>
 #include <string>
 
+#define SHORT_CUT_BUILTIN
+
 /*************************/
 /* Traverse Declarations */
 /*************************/
@@ -26,6 +28,9 @@ std::string ClangToDot::Traverse(clang::Decl * decl) {
     bool ret_status = false;
 
     switch (decl->getKind()) {
+        case clang::Decl::Friend:
+            ret_status = VisitFriendDecl((clang::FriendDecl *)decl, node_desc);
+            break;
         case clang::Decl::TranslationUnit:
             ret_status = VisitTranslationUnitDecl((clang::TranslationUnitDecl *)decl, node_desc);
             break;
@@ -50,6 +55,9 @@ std::string ClangToDot::Traverse(clang::Decl * decl) {
         case clang::Decl::CXXDestructor:
             ret_status = VisitCXXDestructorDecl((clang::CXXDestructorDecl *)decl, node_desc);
             break;
+        case clang::Decl::NonTypeTemplateParm:
+            ret_status = VisitNonTypeTemplateParmDecl((clang::NonTypeTemplateParmDecl *)decl, node_desc);
+            break;
         case clang::Decl::ParmVar:
             ret_status = VisitParmVarDecl((clang::ParmVarDecl *)decl, node_desc);
             break;
@@ -68,7 +76,15 @@ std::string ClangToDot::Traverse(clang::Decl * decl) {
         case clang::Decl::EnumConstant:
             ret_status = VisitEnumConstantDecl((clang::EnumConstantDecl *)decl, node_desc);
             break;
-        // TODO cases
+        case clang::Decl::ClassTemplate:
+            ret_status = VisitClassTemplateDecl((clang::ClassTemplateDecl *)decl, node_desc);
+            break;
+        case clang::Decl::TemplateTypeParm:
+            ret_status = VisitTemplateTypeParmDecl((clang::TemplateTypeParmDecl *)decl, node_desc);
+            break;
+        case clang::Decl::Namespace:
+            ret_status = VisitNamespaceDecl((clang::NamespaceDecl *)decl, node_desc);
+            break;
         default:
             std::cerr << "Unknown declacaration kind: " << decl->getDeclKindName() << " !" << std::endl;
             assert(false);
@@ -116,6 +132,27 @@ bool ClangToDot::VisitDecl(clang::Decl * decl, ClangToDot::NodeDescriptor & node
     node_desc.successors.push_back(std::pair<std::string, std::string>("canonical_decl", Traverse(decl->getCanonicalDecl())));
 
     return true;
+}
+
+bool ClangToDot::VisitFriendDecl(clang::FriendDecl * friend_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("FriendDecl");
+
+    clang::NamedDecl * named_decl = friend_decl->getFriendDecl();
+    clang::TypeSourceInfo * type_source_info = friend_decl->getFriendType();
+
+    assert(named_decl == NULL xor type_source_info == NULL); // I think it is and only one: let see!
+
+    if (named_decl != NULL) {
+      node_desc.successors.push_back(std::pair<std::string, std::string>("friend_decl", Traverse(named_decl)));
+    }
+
+    if (type_source_info != NULL) {
+      node_desc.successors.push_back(std::pair<std::string, std::string>("friend_type", Traverse(type_source_info->getType().getTypePtr())));
+    }
+
+    return VisitDecl(friend_decl, node_desc) && res;
 }
 
 bool ClangToDot::VisitNamedDecl(clang::NamedDecl * named_decl, ClangToDot::NodeDescriptor & node_desc) {
@@ -176,6 +213,43 @@ bool ClangToDot::VisitNamespaceDecl(clang::NamespaceDecl * namespace_decl, Clang
     return VisitNamedDecl(namespace_decl, node_desc) && res;
 }
 
+bool ClangToDot::VisitTemplateDecl(clang::TemplateDecl * template_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("TemplateDecl");
+
+    clang::TemplateParameterList * template_parameters = template_decl->getTemplateParameters();
+    assert(template_parameters != NULL);
+
+    clang::TemplateParameterList::iterator it;
+    unsigned cnt = 0;
+    for (it = template_parameters->begin(); it != template_parameters->end(); it++) {
+        std::ostringstream oss;
+        oss << "template_parameter[" << cnt++ << "]";
+        node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(*it)));
+    }
+
+    node_desc.successors.push_back(std::pair<std::string, std::string>("templated_decl", Traverse(template_decl->getTemplatedDecl())));
+
+    return VisitNamedDecl(template_decl, node_desc) && res;
+}
+
+bool ClangToDot::VisitRedeclarableTemplateDecl(clang::RedeclarableTemplateDecl * redeclarable_template_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("RedeclarableTemplateDecl");
+
+    return VisitTemplateDecl(redeclarable_template_decl, node_desc) && res;
+}
+
+bool ClangToDot::VisitClassTemplateDecl(clang::ClassTemplateDecl * class_template_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("ClassTemplateDecl");
+
+    return VisitRedeclarableTemplateDecl(class_template_decl, node_desc) && res;
+}
+
 bool ClangToDot::VisitTypeDecl(clang::TypeDecl * type_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
@@ -202,6 +276,26 @@ bool ClangToDot::VisitTagDecl(clang::TagDecl * tag_decl, ClangToDot::NodeDescrip
     // TODO NestedNameSpecifier * getQualifier () const 
 
     return VisitTypeDecl(tag_decl, node_desc) && res;
+}
+
+bool ClangToDot::VisitEnumDecl(clang::EnumDecl * enum_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("EnumDecl");
+
+    node_desc.successors.push_back(std::pair<std::string, std::string>("previous_declaration", Traverse(enum_decl->getPreviousDeclaration())));
+
+    clang::EnumDecl::enumerator_iterator it;
+    unsigned cnt = 0;
+    for (it = enum_decl->enumerator_begin(); it != enum_decl->enumerator_end(); it++) {
+        std::ostringstream oss;
+        oss << "enumerator[" << cnt++ << "]";
+        node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(*it)));
+    }
+
+    node_desc.successors.push_back(std::pair<std::string, std::string>("promotion_type", Traverse(enum_decl->getPromotionType().getTypePtr())));
+
+    return VisitTagDecl(enum_decl, node_desc) && res;
 }
 
 bool ClangToDot::VisitRecordDecl(clang::RecordDecl * record_decl, ClangToDot::NodeDescriptor & node_desc) {
@@ -298,24 +392,17 @@ bool ClangToDot::VisitCXXRecordDecl(clang::CXXRecordDecl * cxx_record_decl, Clan
     return VisitRecordDecl(cxx_record_decl, node_desc) && res;
 }
 
-bool ClangToDot::VisitEnumDecl(clang::EnumDecl * enum_decl, ClangToDot::NodeDescriptor & node_desc) {
+bool ClangToDot::VisitTemplateTypeParmDecl(clang::TemplateTypeParmDecl * template_type_parm_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
-    node_desc.kind_hierarchy.push_back("EnumDecl");
+    node_desc.kind_hierarchy.push_back("TemplateTypeParmDecl");
 
-    node_desc.successors.push_back(std::pair<std::string, std::string>("previous_declaration", Traverse(enum_decl->getPreviousDeclaration())));
+    if (template_type_parm_decl->hasDefaultArgument())
+        node_desc.successors.push_back(
+            std::pair<std::string, std::string>("default_argument", Traverse(template_type_parm_decl->getDefaultArgument().getTypePtr()))
+        );
 
-    clang::EnumDecl::enumerator_iterator it;
-    unsigned cnt = 0;
-    for (it = enum_decl->enumerator_begin(); it != enum_decl->enumerator_end(); it++) {
-        std::ostringstream oss;
-        oss << "enumerator[" << cnt++ << "]";
-        node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(*it)));
-    }
-
-    node_desc.successors.push_back(std::pair<std::string, std::string>("promotion_type", Traverse(enum_decl->getPromotionType().getTypePtr())));
-
-    return VisitTagDecl(enum_decl, node_desc) && res;
+    return VisitTypeDecl(template_type_parm_decl, node_desc) && res;
 }
 
 bool ClangToDot::VisitTypedefNameDecl(clang::TypedefNameDecl * typedef_name_decl, ClangToDot::NodeDescriptor & node_desc) {
@@ -437,6 +524,17 @@ bool ClangToDot::VisitCXXDestructorDecl(clang::CXXDestructorDecl * cxx_destructo
     return VisitCXXMethodDecl(cxx_destructor_decl, node_desc) && res;
 }
 
+bool ClangToDot::VisitNonTypeTemplateParmDecl(clang::NonTypeTemplateParmDecl * non_type_template_param_decl, ClangToDot::NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("NonTypeTemplateParmDecl");
+
+    if (non_type_template_param_decl->hasDefaultArgument())
+        node_desc.successors.push_back(std::pair<std::string, std::string>("default_argument", Traverse(non_type_template_param_decl->getDefaultArgument())));
+
+    return VisitDeclaratorDecl(non_type_template_param_decl, node_desc) && res;
+}
+
 bool ClangToDot::VisitVarDecl(clang::VarDecl * var_decl, ClangToDot::NodeDescriptor & node_desc) {
     bool res = true;
 
@@ -485,6 +583,9 @@ bool ClangToDot::VisitTranslationUnitDecl(clang::TranslationUnitDecl * translati
     for (it = translation_unit_decl->decls_begin(); it != translation_unit_decl->decls_end(); it++) {
         std::ostringstream oss;
         oss << "child[" << cnt++ << "]";
+#ifdef SHORT_CUT_BUILTIN
+        if (cnt < 6) continue;
+#endif
         node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(*it)));
     }
 

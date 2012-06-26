@@ -45,6 +45,9 @@ std::string ClangToDot::Traverse(clang::Stmt * stmt) {
         case clang::Stmt::CompoundLiteralExprClass:
             ret_status = VisitCompoundLiteralExpr((clang::CompoundLiteralExpr *)stmt, node_desc);
             break;
+        case clang::Stmt::CXXConstructExprClass:
+            ret_status = VisitCXXConstructExpr((clang::CXXConstructExpr *)stmt, node_desc);
+            break;
         case clang::Stmt::ImplicitCastExprClass:
             ret_status = VisitImplicitCastExpr((clang::ImplicitCastExpr *)stmt, node_desc);
             break;
@@ -402,6 +405,24 @@ bool ClangToDot::VisitCompoundLiteralExpr(clang::CompoundLiteralExpr * compound_
     node_desc.successors.push_back(std::pair<std::string, std::string>("initializer", Traverse(compound_literal->getInitializer())));
 
     return VisitExpr(compound_literal, node_desc) && res;
+}
+
+bool ClangToDot::VisitCXXConstructExpr(clang::CXXConstructExpr * cxx_constructor_expr, NodeDescriptor & node_desc) {
+    bool res = true;
+
+    node_desc.kind_hierarchy.push_back("CXXConstructExpr");
+
+    node_desc.successors.push_back(std::pair<std::string, std::string>("constructor", Traverse(cxx_constructor_expr->getConstructor())));
+
+    clang::CXXConstructExpr::arg_iterator it;
+    unsigned cnt = 0;
+    for (it = cxx_constructor_expr->arg_begin(); it != cxx_constructor_expr->arg_end(); ++it) {
+        std::ostringstream oss;
+        oss << "argument[" << cnt++ << "]";
+        node_desc.successors.push_back(std::pair<std::string, std::string>(oss.str(), Traverse(*it)));
+    }
+
+    return VisitExpr(cxx_constructor_expr, node_desc) && res;
 }
 
 bool ClangToDot::VisitDeclRefExpr(clang::DeclRefExpr * decl_ref_expr, ClangToDot::NodeDescriptor & node_desc) {
